@@ -3,8 +3,12 @@
 test_files/
 experiments/
 
-src/*
-bin/*
+src/.*
+bin/.*
+
+# Any folder that contains should be tracked. 
+# Which files inside it to track should be clear in the above statements.
+!*.gitkeep
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,c++
