@@ -1,28 +1,32 @@
-LEXER_FILE_NAME = minijava_lexer
-LEXER_OUTPUT_NAME = $(LEXER_FILE_NAME)
+SRCDIR = src
+ODIR = bin
+LIBS = -ll
+CFLAGS = -g -w
+CC = gcc
 
-PARSER_FILE_NAME = minijava_parser
-PARSER_OUTPUT_NAME = $(PARSER_FILE_NAME)
+FLEX_FILE = minijava_lexer.l
+PARSE_FILE = minijava_parser.y
 
-FLEX_OUTPUT_NAME = lex.yy.c
-BISON_OUTPUT_NAMES = $(PARSER_FILE_NAME).tab.c $(PARSER_FILE_NAME).tab.h
+FLEX_OUT = $(patsubst %.l, $(SRCDIR)/%.yy.c, $(FLEX_FILE))
+PARSER_OUT = $(patsubst %.y, $(SRCDIR)/%.tab.c, $(PARSE_FILE))
+PARSER_HEADER = $(patsubst %.c, %.h, $(PARSER_OUT))
 
-TEST_NAME = testJavaCode.java
-TEST_NAME = ./test_files/assignment3_valid/A.java
+PROGRAM_OUT = $(ODIR)/compiler
 
-PROGRAM_OUTPUT_NAME = testCompiler
+TEST_FOLDER = ./test_files
+TEST_FILE = $(TEST_FOLDER)/assignment3_valid/A.java
 
-compiler: lexer parser
-	gcc -g -w -o $(PROGRAM_OUTPUT_NAME) $(FLEX_OUTPUT_NAME) $(BISON_OUTPUT_NAMES) -ll
+compiler: scanner parser
+	$(CC) $(CFLAGS) -o $(PROGRAM_OUT) $(PARSER_OUT) $(FLEX_OUT) $(LIBS) 
 
-parser: $(PARSER_FILE_NAME).y
-	bison -d $(PARSER_FILE_NAME).y
+parser: $(PARSE_FILE)
+	bison -d -o $(PARSER_OUT) $(PARSE_FILE)
 
-lexer: $(LEXER_FILE_NAME).l parser
-	flex $(LEXER_FILE_NAME).l
+scanner:
+	flex -o $(FLEX_OUT) $(FLEX_FILE)
 
 run: compiler
-	./$(PROGRAM_OUTPUT_NAME) < $(TEST_NAME)
+	./$(PROGRAM_OUT) < $(TEST_FILE)
 
 clean:
-	rm -f $(PROGRAM_OUTPUT_NAME) $(FLEX_OUTPUT_NAME) $(BISON_OUTPUT_NAMES)
+	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT)
