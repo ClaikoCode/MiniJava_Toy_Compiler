@@ -15,14 +15,14 @@
 }
 
 %token <stringVal> T_INT T_BOOLEAN T_ARR T_VOID T_STRING
-%token <stringVal>IDENTIFIER <intVal>INTEGER BOOLEAN STRING
-%token CLASS PUBLIC PRIVATE STATIC
-%token EQU SEMI_COLON COMMA DOT NEGATE
-%token IF ELSE ELIF FOR WHILE NEW RETURN THIS
+%token <stringVal> IDENTIFIER INTEGER BOOLEAN STRING
+%token <stringVal> CLASS PUBLIC PRIVATE STATIC
+%token <stringVal> EQU SEMI_COLON COMMA DOT NEGATE
+%token <stringVal> IF ELSE ELIF FOR WHILE NEW RETURN THIS
 %token <stringVal> ADDOP SUBOP MULOP DIVOP
-%token LB RB LCB RCB LP RP
+%token <stringVal> LB RB LCB RCB LP RP
 %token <stringVal> CMP_EQ CMP_LT CMP_LEQ CMP_GT CMP_GEQ CMP_OR CMP_AND
-%token SYS_PRINT MAIN
+%token <stringVal> SYS_PRINT MAIN LENGTH
 
 %token END 0 "end of file"
 
@@ -45,14 +45,12 @@ main_class  : PUBLIC CLASS identifier
 
 class_decl_batch    : /* empty */
                     | class_decl_batch class_declaration
-                    | class_declaration
                     ;
 
 class_declaration   : CLASS identifier LCB var_decl_batch method_decl_batch RCB { printf("Class '%s' declared.", $2);};
 
 method_decl_batch   : /* empty */
                     | method_decl_batch method_declaration
-                    | method_declaration
                     ;
 
 method_declaration  : PUBLIC type identifier LP var_list RP 
@@ -65,7 +63,6 @@ method_body : /* empty */
 
 var_decl_batch  : /* empty */ 
                 | var_decl_batch var_declaration
-                | var_declaration
                 ;
 
 var_declaration : variable SEMI_COLON { printf("Variable '%s' declared.\n", $1); };
@@ -82,7 +79,7 @@ type        : T_ARR
 statement   : LCB statement_batch RCB 
             | if_clause elif_clause else_clause 
             | WHILE LP expression RP statement 
-            | SYS_PRINT LP expression RP SEMI_COLON 
+            | SYS_PRINT LP expression RP SEMI_COLON
             | identifier EQU expression SEMI_COLON 
             | identifier LB expression RB EQU expression SEMI_COLON
             | expression SEMI_COLON
@@ -90,7 +87,6 @@ statement   : LCB statement_batch RCB
 
 statement_batch : /* empty */ 
                 | statement_batch statement
-                | statement
                 ;
 
 if_clause       : IF LP expression RP statement;
@@ -105,7 +101,7 @@ else_clause     : /* empty */
 
 expression  : expression operator expression
             | expression LB expression RB
-            | expression DOT identifier
+            | expression DOT LENGTH
             | expression DOT identifier LP arg_list RP
             | INTEGER
             | BOOLEAN
@@ -118,17 +114,17 @@ expression  : expression operator expression
             | identifier 
             ;
 
-operator    : ADDOP
-            | SUBOP
-            | MULOP
-            | DIVOP
-            | CMP_OR
-            | CMP_AND
-            | CMP_EQ
-            | CMP_GEQ
-            | CMP_GT
-            | CMP_LEQ
-            | CMP_LT
+operator    : ADDOP 
+            | SUBOP 
+            | MULOP 
+            | DIVOP 
+            | CMP_OR 
+            | CMP_AND 
+            | CMP_EQ 
+            | CMP_GEQ 
+            | CMP_GT 
+            | CMP_LEQ 
+            | CMP_LT 
             ;
 
 var_list    : /* empty */

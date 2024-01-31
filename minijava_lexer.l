@@ -6,6 +6,7 @@
     #define USE_LEX_ONLY 0
     #define ACTION(lexer_action, parser_action) if(USE_LEX_ONLY){lexer_action;}else{parser_action;}
     #define SET_STRING() { yylval.stringVal = strdup(yytext); }
+    #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(token == IDENTIFIER){ printf("'%s' ", yytext); } } else { SET_STRING(); return token; }
 
     int lexical_errors = 0;
 %}
@@ -19,61 +20,62 @@ STRING_PTRN [a-zA-Z0-9]
 
 %% 
 
-"System.out.println"                        { ACTION(printf("SYS_PRINT "), return SYS_PRINT) }
-"main"                                      { ACTION(printf("MAIN "), return MAIN) }
+"System.out.println"                        { REGISTER_TOKEN(SYS_PRINT); }
+"main"                                      { REGISTER_TOKEN(MAIN); }
+"length"                                    { REGISTER_TOKEN(LENGTH); }
 
-"="                                         { ACTION(printf("EQU "), return EQU) }
-"int"                                       { ACTION(printf("INTEGER_TYPE "), SET_STRING() return T_INT) }
-"int[]"                                     { ACTION(printf("ARR_TYPE "), SET_STRING() return T_ARR) }
-"boolean"                                   { ACTION(printf("BOOLEAN_TYPE "), SET_STRING() return T_BOOLEAN) }
-"String"                                    { ACTION(printf("STRING_TYPE "), SET_STRING() return T_STRING) }
-"void"                                      { ACTION(printf("VOID_TYPE "), SET_STRING() return T_VOID) }
+"="                                         { REGISTER_TOKEN(EQU); }
+"int"                                       { REGISTER_TOKEN(T_INT); }
+"int[]"                                     { REGISTER_TOKEN(T_ARR); }
+"boolean"                                   { REGISTER_TOKEN(T_BOOLEAN); }
+"String"                                    { REGISTER_TOKEN(T_STRING); }
+"void"                                      { REGISTER_TOKEN(T_VOID); }
 
-"public"                                    { ACTION(printf("PUBLIC "), return PUBLIC) }
-"private"                                   { ACTION(printf("PRIVATE "), return PRIVATE) }
-"static"                                    { ACTION(printf("STATIC "), return STATIC) }
-"class"                                     { ACTION(printf("CLASS "), return CLASS) }
+"public"                                    { REGISTER_TOKEN(PUBLIC); }
+"private"                                   { REGISTER_TOKEN(PRIVATE); }
+"static"                                    { REGISTER_TOKEN(STATIC); }
+"class"                                     { REGISTER_TOKEN(CLASS); }
 
-"if"                                        { ACTION(printf("IF "), return IF) }
-"else"                                      { ACTION(printf("ELSE "), return ELSE) }
-"else if"                                   { ACTION(printf("ELIF "), return ELIF) }
-"for"                                       { ACTION(printf("FOR "), return FOR) }
-"while"                                     { ACTION(printf("WHILE "), return WHILE) }                                
-"new"                                       { ACTION(printf("NEW "), return NEW) }                                
-"return"                                    { ACTION(printf("RETURN "), return RETURN)}                                
-"this"                                      { ACTION(printf("THIS "), return THIS) } 
+"if"                                        { REGISTER_TOKEN(IF); }
+"else"                                      { REGISTER_TOKEN(ELSE); }
+"else if"                                   { REGISTER_TOKEN(ELIF); }
+"for"                                       { REGISTER_TOKEN(FOR); }
+"while"                                     { REGISTER_TOKEN(WHILE); }                                
+"new"                                       { REGISTER_TOKEN(NEW); }                                
+"return"                                    { REGISTER_TOKEN(RETURN)};                                
+"this"                                      { REGISTER_TOKEN(THIS); } 
 
-"+"                                         { ACTION(printf("ADDOP "), return ADDOP) }
-"-"                                         { ACTION(printf("SUBOP "), return SUBOP) }
-"*"                                         { ACTION(printf("MULOP "), return MULOP) }
-"/"                                         { ACTION(printf("DIVOP "), return DIVOP) }
+"+"                                         { REGISTER_TOKEN(ADDOP); }
+"-"                                         { REGISTER_TOKEN(SUBOP); }
+"*"                                         { REGISTER_TOKEN(MULOP); }
+"/"                                         { REGISTER_TOKEN(DIVOP); }
 
-"||"                                        { ACTION(printf("CMP_OR "), return CMP_OR) }
-"&&"                                        { ACTION(printf("CMP_AND "), return CMP_AND) }
-"=="                                        { ACTION(printf("CMP_EQ "), return CMP_EQ) }
-"<"                                         { ACTION(printf("CMP_LT "), return CMP_LT) }
-"<="                                        { ACTION(printf("CMP_LEQ "), return CMP_LEQ) }
-">"                                         { ACTION(printf("CMP_GT "), return CMP_GT) }
-">="                                        { ACTION(printf("CMP_GEQ "), return CMP_GEQ) }
+"||"                                        { REGISTER_TOKEN(CMP_OR); }
+"&&"                                        { REGISTER_TOKEN(CMP_AND); }
+"=="                                        { REGISTER_TOKEN(CMP_EQ); }
+"<"                                         { REGISTER_TOKEN(CMP_LT); }
+"<="                                        { REGISTER_TOKEN(CMP_LEQ); }
+">"                                         { REGISTER_TOKEN(CMP_GT); }
+">="                                        { REGISTER_TOKEN(CMP_GEQ); }
 
-"["                                         { ACTION(printf("LB "), return LB) }
-"]"                                         { ACTION(printf("RB "), return RB) }
-"{"                                         { ACTION(printf("LCB "), return LCB) }
-"}"                                         { ACTION(printf("RCB "), return RCB) }
-"("                                         { ACTION(printf("LP "), return LP)}
-")"                                         { ACTION(printf("RP "), return RP)}
+"["                                         { REGISTER_TOKEN(LB); }
+"]"                                         { REGISTER_TOKEN(RB); }
+"{"                                         { REGISTER_TOKEN(LCB); }
+"}"                                         { REGISTER_TOKEN(RCB); }
+"("                                         { REGISTER_TOKEN(LP); }
+")"                                         { REGISTER_TOKEN(RP); }
 
-"."                                         { ACTION(printf("DOT "), return DOT) }
-"!"                                         { ACTION(printf("NEGATE "), return NEGATE) }
-","                                         { ACTION(printf("COMMA "), return COMMA) }
-";"                                         { ACTION(printf("SEMI_COLON "), return SEMI_COLON) }
+"."                                         { REGISTER_TOKEN(DOT); }
+"!"                                         { REGISTER_TOKEN(NEGATE); }
+","                                         { REGISTER_TOKEN(COMMA); }
+";"                                         { REGISTER_TOKEN(SEMI_COLON); }
 
-"//"[^\n]*                                  { ACTION(printf("COMMENT "), return) }
-"true"|"false"                              { ACTION(printf("BOOLEAN "), return BOOLEAN) }
-["](\\.|[^"\\])*["]                         { ACTION(printf("STRING "), return STRING) }
-0|[1-9]{NUMBER_PTRN}*                       { ACTION(printf("INTEGER "), yylval.intVal = atoi(yytext); return INTEGER) }
-{LETTER_PTRN}({ALPHANUM_PTRN}|$)*           { ACTION(printf("IDENTIFIER '%s' ", yytext), SET_STRING() return IDENTIFIER) }
-\n                                          { ACTION(printf("\n"), ) }
+"//"[^\n]*                                  { /* NOP */ }
+"true"|"false"                              { REGISTER_TOKEN(BOOLEAN); }
+["](\\.|[^"\\])*["]                         { REGISTER_TOKEN(STRING); }
+0|[1-9]{NUMBER_PTRN}*                       { REGISTER_TOKEN(INTEGER); }
+{LETTER_PTRN}({ALPHANUM_PTRN}|$)*           { REGISTER_TOKEN(IDENTIFIER); }
+\n                                          { ACTION(printf("\n"), /* NOP */); }
 [ \t\r]+                                    { /* NOP */ }
 .                                           { if(!lexical_errors) fprintf(stderr, "Lexical errors found! See the logs below: \n"); fprintf(stderr, "\t@error at line %d. Character '%s' is not recognized.\n", yylineno, yytext); lexical_errors = 1;}
 <<EOF>>                                     { return END; }
@@ -83,6 +85,13 @@ STRING_PTRN [a-zA-Z0-9]
 int main()
 {
     printf("\n");
-    yyparse();
+    if(USE_LEX_ONLY)
+    {
+        yylex();
+    }
+    else
+    {
+        yyparse();
+    }
     printf("\n\n");
 }
