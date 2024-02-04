@@ -25,14 +25,14 @@
 %define api.value.type variant
 %define api.token.constructor
 
-%token <std::string> T_INT T_BOOLEAN T_ARR T_VOID T_STRING
-%token <std::string> IDENTIFIER INTEGER BOOLEAN STRING
+%token <std::string> T_INT "Integer type" T_BOOLEAN "Boolean type" T_ARR "Array type" T_VOID "Void type" T_STRING "String type"
+%token <std::string> IDENTIFIER "Identifier" INTEGER "Integer literal" BOOLEAN "Boolean literal" STRING "String literal"
 %token <std::string> CLASS PUBLIC PRIVATE STATIC
-%token <std::string> EQU SEMI_COLON COMMA DOT NEGATE
+%token <std::string> EQU "=" SEMI_COLON ";" COMMA "," DOT "." NEGATE "Negation (!)"
 %token <std::string> IF ELSE ELIF FOR WHILE NEW RETURN THIS
-%token <std::string> ADDOP SUBOP MULOP DIVOP
-%token <std::string> LB RB LCB RCB LP RP
-%token <std::string> CMP_EQ CMP_LT CMP_LEQ CMP_GT CMP_GEQ CMP_OR CMP_AND
+%token <std::string> ADDOP "+" SUBOP "-" MULOP "*" DIVOP "/"
+%token <std::string> LB "[" RB "]" LCB "{" RCB "}" LP "(" RP ")"
+%token <std::string> CMP_EQ "==" CMP_LT "<" CMP_LEQ "<=" CMP_GT ">" CMP_GEQ ">=" CMP_OR "||" CMP_AND "&&"
 %token <std::string> SYS_PRINT MAIN LENGTH
 
 %token END 0 "end of file"

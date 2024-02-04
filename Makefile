@@ -15,6 +15,7 @@ PROGRAM_OUT = $(ODIR)/compiler
 
 TEST_FOLDER = ./test_files
 TEST_FILE = $(TEST_FOLDER)/assignment3_valid/B.java
+TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidTypeDeclaration.java
 
 compiler: scanner parser
 	$(CC) $(CFLAGS) -o $(PROGRAM_OUT) $(PARSER_OUT) $(FLEX_OUT) $(LIBS) 
