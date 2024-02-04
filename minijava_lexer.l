@@ -2,13 +2,14 @@
     #include <stdio.h>
     #include <assert.h>
     #include "minijava_parser.tab.h"
+    #include "Node.h"
 
     #define USE_LEX_ONLY 0
-    #define ACTION(lexer_action, parser_action) if(USE_LEX_ONLY){lexer_action;}else{parser_action;}
-    #define SET_STRING() { yylval.stringVal = strdup(yytext); }
-    #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(token == IDENTIFIER){ printf("'%s' ", yytext); } } else { SET_STRING(); return token; }
 
+    #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(#token == "IDENTIFIER"){ printf("'%s' ", yytext); } } else { return yy::parser::make_##token(yytext); }
     int lexical_errors = 0;
+
+    #define YY_DECL yy::parser::symbol_type yylex()
 %}
 
 %option yylineno
@@ -75,10 +76,10 @@ STRING_PTRN [a-zA-Z0-9]
 ["](\\.|[^"\\])*["]                         { REGISTER_TOKEN(STRING); }
 0|[1-9]{NUMBER_PTRN}*                       { REGISTER_TOKEN(INTEGER); }
 {LETTER_PTRN}({ALPHANUM_PTRN}|$)*           { REGISTER_TOKEN(IDENTIFIER); }
-\n                                          { ACTION(printf("\n"), /* NOP */); }
+\n                                          { if (USE_LEX_ONLY){printf("\n");}else{/* NOP */} }
 [ \t\r]+                                    { /* NOP */ }
 .                                           { if(!lexical_errors) fprintf(stderr, "Lexical errors found! See the logs below: \n"); fprintf(stderr, "\t@error at line %d. Character '%s' is not recognized.\n", yylineno, yytext); lexical_errors = 1;}
-<<EOF>>                                     { return END; }
+<<EOF>>                                     { return yy::parser::make_END(); }
 
 %%
 
@@ -91,7 +92,8 @@ int main()
     }
     else
     {
-        yyparse();
+        yy::parser parse;
+        return parse();
     }
     printf("\n\n");
 }

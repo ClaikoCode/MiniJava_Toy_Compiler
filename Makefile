@@ -1,8 +1,8 @@
 SRCDIR = src
 ODIR = bin
 LIBS = -ll
-CFLAGS = -g -w
-CC = gcc
+CFLAGS = -g -w -std=c++14
+CC = g++
 
 FLEX_FILE = minijava_lexer.l
 PARSE_FILE = minijava_parser.y
