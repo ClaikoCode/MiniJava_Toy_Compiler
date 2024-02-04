@@ -1,35 +1,41 @@
+%skeleton "lalr1.cc" // -*- C++ -*-
+%require "3.2"
+
 %{
     #include <stdio.h>
-
-    void yyerror(const char* errStr);
-
-    extern int yylineno;
+    #include <iostream>
+    #include "Node.h"
 %}
 
-%define parse.error detailed
-%define parse.lac full
+%code{
+    #define YY_DECL yy::parser::symbol_type yylex()
+    YY_DECL;
 
-%union {
-    int intVal;
-    char* stringVal;
+    extern int yylineno;
+    Node* root;
 }
 
-%token <stringVal> T_INT T_BOOLEAN T_ARR T_VOID T_STRING
-%token <stringVal> IDENTIFIER INTEGER BOOLEAN STRING
-%token <stringVal> CLASS PUBLIC PRIVATE STATIC
-%token <stringVal> EQU SEMI_COLON COMMA DOT NEGATE
-%token <stringVal> IF ELSE ELIF FOR WHILE NEW RETURN THIS
-%token <stringVal> ADDOP SUBOP MULOP DIVOP
-%token <stringVal> LB RB LCB RCB LP RP
-%token <stringVal> CMP_EQ CMP_LT CMP_LEQ CMP_GT CMP_GEQ CMP_OR CMP_AND
-%token <stringVal> SYS_PRINT MAIN LENGTH
+%define parse.error verbose
+
+%define api.value.type variant
+%define api.token.constructor
+
+%token <std::string> T_INT T_BOOLEAN T_ARR T_VOID T_STRING
+%token <std::string> IDENTIFIER INTEGER BOOLEAN STRING
+%token <std::string> CLASS PUBLIC PRIVATE STATIC
+%token <std::string> EQU SEMI_COLON COMMA DOT NEGATE
+%token <std::string> IF ELSE ELIF FOR WHILE NEW RETURN THIS
+%token <std::string> ADDOP SUBOP MULOP DIVOP
+%token <std::string> LB RB LCB RCB LP RP
+%token <std::string> CMP_EQ CMP_LT CMP_LEQ CMP_GT CMP_GEQ CMP_OR CMP_AND
+%token <std::string> SYS_PRINT MAIN LENGTH
 
 %token END 0 "end of file"
 
-%type <stringVal> identifier
-%type <stringVal> variable
-%type <stringVal> operator
-%type <stringVal> type
+%type <std::string> identifier
+%type <std::string> variable
+%type <std::string> operator
+%type <std::string> type
 
 
 %%
@@ -47,14 +53,14 @@ class_decl_batch    : /* empty */
                     | class_decl_batch class_declaration
                     ;
 
-class_declaration   : CLASS identifier LCB var_decl_batch method_decl_batch RCB { printf("Class '%s' declared.", $2);};
+class_declaration   : CLASS identifier LCB var_decl_batch method_decl_batch RCB 
 
 method_decl_batch   : /* empty */
                     | method_decl_batch method_declaration
                     ;
 
 method_declaration  : PUBLIC type identifier LP var_list RP 
-                        LCB method_body RETURN expression SEMI_COLON RCB { printf("Method '%s' declared.\n", $3); };
+                        LCB method_body RETURN expression SEMI_COLON RCB 
 
 method_body : /* empty */ 
             | method_body var_declaration
@@ -65,8 +71,8 @@ var_decl_batch  : /* empty */
                 | var_decl_batch var_declaration
                 ;
 
-var_declaration : variable SEMI_COLON { printf("Variable '%s' declared.\n", $1); };
-variable : type identifier { $$ = $2; };
+var_declaration : variable SEMI_COLON 
+variable : type identifier 
 
 type        : T_ARR
             | T_BOOLEAN
@@ -128,8 +134,8 @@ operator    : ADDOP
             ;
 
 var_list    : /* empty */
-            | var_list COMMA variable { printf("  %s\n", $3); }
-            | variable { printf("Variable list:\n  %s\n", $1); }
+            | var_list COMMA variable
+            | variable 
             ;
 
 arg_list    : /* empty */
@@ -137,11 +143,10 @@ arg_list    : /* empty */
             | expression
             ;
 
-identifier : IDENTIFIER;
+identifier : IDENTIFIER { Node* a = new Node("Identifier", $1, yylineno); };
 
 %%
-
-void yyerror(const char* errStr)
+void yy::parser::error(const std::string& errStr)
 {
-    fprintf(stderr, "PARSER ERROR OCCURED: %s at line %d.\n", errStr, yylineno);
+    fprintf(stderr, "PARSER ERROR OCCURED: %s at line %d.\n", errStr.c_str(), yylineno);
 }
