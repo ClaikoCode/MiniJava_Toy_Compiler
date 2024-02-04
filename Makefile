@@ -14,7 +14,7 @@ PARSER_HEADER = $(patsubst %.c, %.h, $(PARSER_OUT))
 PROGRAM_OUT = $(ODIR)/compiler
 
 TEST_FOLDER = ./test_files
-TEST_FILE = $(TEST_FOLDER)/assignment3_valid/A.java
+TEST_FILE = $(TEST_FOLDER)/assignment3_valid/B.java
 
 compiler: scanner parser
 	$(CC) $(CFLAGS) -o $(PROGRAM_OUT) $(PARSER_OUT) $(FLEX_OUT) $(LIBS) 
@@ -29,4 +29,7 @@ run: compiler
 	./$(PROGRAM_OUT) < $(TEST_FILE)
 
 clean:
-	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT)
+	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
+
+tree:
+	dot -Tpdf tree.dot -o tree.pdf

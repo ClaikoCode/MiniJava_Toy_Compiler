@@ -1,9 +1,11 @@
 ### General Project Files ###
 
-test_files/
+.vscode
+
 experiments/
 
-src/*
+src/*.yy.*
+src/*.tab.*
 bin/*
 
 # Any folder that contains should be tracked. 

@@ -10,6 +10,8 @@
     int lexical_errors = 0;
 
     #define YY_DECL yy::parser::symbol_type yylex()
+
+    extern Node* rootNode;
 %}
 
 %option yylineno
@@ -92,8 +94,19 @@ int main()
     }
     else
     {
-        yy::parser parse;
-        return parse();
+        yy::parser parser;
+        bool parseSuccess = !parser.parse();
+
+        if(lexical_errors)
+            return 1;
+        
+        if(parseSuccess)
+        {
+            printf("Printing tree:\n");
+            rootNode->print_tree();
+            printf("\nGenerating tree:\n");
+            rootNode->generate_tree();
+        }
     }
     printf("\n\n");
 }
