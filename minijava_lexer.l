@@ -53,9 +53,11 @@ STRING_PTRN [a-zA-Z0-9]
 "*"                                         { REGISTER_TOKEN(MULOP); }
 "/"                                         { REGISTER_TOKEN(DIVOP); }
 
-"||"                                        { REGISTER_TOKEN(CMP_OR); }
-"&&"                                        { REGISTER_TOKEN(CMP_AND); }
+"||"                                        { REGISTER_TOKEN(OR); }
+"&&"                                        { REGISTER_TOKEN(AND); }
+
 "=="                                        { REGISTER_TOKEN(CMP_EQ); }
+"!="                                        { REGISTER_TOKEN(CMP_NEQ); }
 "<"                                         { REGISTER_TOKEN(CMP_LT); }
 "<="                                        { REGISTER_TOKEN(CMP_LEQ); }
 ">"                                         { REGISTER_TOKEN(CMP_GT); }
