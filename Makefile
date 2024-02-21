@@ -14,8 +14,10 @@ PARSER_HEADER = $(patsubst %.c, %.h, $(PARSER_OUT))
 PROGRAM_OUT = $(ODIR)/compiler
 
 TEST_FOLDER = ./test_files
-TEST_FILE = $(TEST_FOLDER)/assignment3_valid/B.java
-TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidTypeDeclaration.java
+TEST_FILE = ./experiments/testText3.java
+TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
+TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
+
 
 compiler: scanner parser
 	$(CC) $(CFLAGS) -o $(PROGRAM_OUT) $(PARSER_OUT) $(FLEX_OUT) $(LIBS) 
@@ -34,3 +36,5 @@ clean:
 
 tree:
 	dot -Tpdf tree.dot -o tree.pdf
+
+all: run tree

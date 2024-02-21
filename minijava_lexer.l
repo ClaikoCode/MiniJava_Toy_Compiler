@@ -77,7 +77,6 @@ STRING_PTRN [a-zA-Z0-9]
 
 "//"[^\n]*                                  { /* NOP */ }
 "true"|"false"                              { REGISTER_TOKEN(BOOLEAN); }
-["](\\.|[^"\\])*["]                         { REGISTER_TOKEN(STRING); }
 0|[1-9]{NUMBER_PTRN}*                       { REGISTER_TOKEN(INTEGER); }
 {LETTER_PTRN}({ALPHANUM_PTRN}|$)*           { REGISTER_TOKEN(IDENTIFIER); }
 \n                                          { if (USE_LEX_ONLY){printf("\n");}else{/* NOP */} }
@@ -87,9 +86,8 @@ STRING_PTRN [a-zA-Z0-9]
 
 %%
 
-int main()
+int main(int argc, char* argv[])
 {
-    printf("\n");
     if(USE_LEX_ONLY)
     {
         yylex();
@@ -97,7 +95,7 @@ int main()
     else
     {
         yy::parser parser;
-        bool parseSuccess = !parser.parse();
+        bool parseSuccess = !parser.parse();        
 
         if(lexical_errors)
             return 1;
@@ -110,5 +108,6 @@ int main()
             rootNode->generate_tree();
         }
     }
-    printf("\n\n");
+
+    return 0;
 }

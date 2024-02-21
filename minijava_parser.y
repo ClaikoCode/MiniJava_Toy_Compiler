@@ -40,7 +40,7 @@
 
 %type <std::string> type
 %type <Node*> goal main_class class_decl_batch class_declaration method_decl_batch method_declaration return_statement method_body var_decl_batch var_declaration variable
-%type <Node*> statement statement_batch if_clause elif_clause else_clause var_list arg_list identifier
+%type <Node*> statement statement_batch if_clause elif_clause else_clause var_list arg_list identifier filled_arg_list
 %type <Node*> expression logical_expr equality_expr compare_expr term_expr factor_expr unary_expr primary_expr
 
 %precedence IF
@@ -48,8 +48,8 @@
 %precedence ELSE
 
 %left OR AND
-%left CMP_EQ CMP_NEQ
-%left CMP_GEQ CMP_GT CMP_LEQ CMP_LT 
+%nonassoc CMP_EQ CMP_NEQ
+%nonassoc CMP_GEQ CMP_GT CMP_LEQ CMP_LT 
 %left ADDOP SUBOP
 %left MULOP DIVOP
 %right NEGATE
@@ -148,51 +148,51 @@ else_clause     : /* empty */ { $$ = nullptr; }
                 ;
 
 expression  : logical_expr { $$ = $1; }
-            | NEW T_INT LB expression RB { ACT_REGISTER_NODE($$, "Exp. New Arr", ""); ACT_ADD_CHILD($$, $4); }
-            | NEW identifier LP RP { ACT_REGISTER_NODE($$, "Exp. New", ""); ACT_ADD_CHILD($$, $2); }
-            | expression LB expression RB { ACT_REGISTER_NODE($$, "Exp. Indexing", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-            | expression DOT LENGTH { ACT_REGISTER_NODE($$, "Exp. Length", ""); ACT_ADD_CHILD($$, $1); }
-            | expression DOT identifier LP arg_list RP  { ACT_REGISTER_NODE($$, "Exp. Method call", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
+            | NEW T_INT LB expression RB { ACT_REGISTER_NODE($$, "Expr. New Arr", ""); ACT_ADD_CHILD($$, $4); }
+            | NEW identifier LP RP { ACT_REGISTER_NODE($$, "Expr. New", ""); ACT_ADD_CHILD($$, $2); }
+            | expression LB expression RB { ACT_REGISTER_NODE($$, "Expr. Indexing", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | expression DOT LENGTH { ACT_REGISTER_NODE($$, "Expr. Length", ""); ACT_ADD_CHILD($$, $1); }
+            | expression DOT identifier LP arg_list RP  { ACT_REGISTER_NODE($$, "Expr. Method call", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
             ;
 
 logical_expr    : equality_expr { $$ = $1; }
-                | logical_expr OR equality_expr { ACT_REGISTER_NODE($$, "Exp. '||' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | logical_expr AND equality_expr { ACT_REGISTER_NODE($$, "Exp. '&&' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | logical_expr OR equality_expr { ACT_REGISTER_NODE($$, "Expr. '||' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | logical_expr AND equality_expr { ACT_REGISTER_NODE($$, "Expr. '&&' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
                 ;
 
 equality_expr   : compare_expr { $$ = $1; }
-                | equality_expr CMP_NEQ compare_expr { ACT_REGISTER_NODE($$, "Exp. '!=' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | equality_expr CMP_EQ compare_expr { ACT_REGISTER_NODE($$, "Exp. '==' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | equality_expr CMP_NEQ compare_expr { ACT_REGISTER_NODE($$, "Expr. '!=' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | equality_expr CMP_EQ compare_expr { ACT_REGISTER_NODE($$, "Expr. '==' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
                 ;
 
 compare_expr    : term_expr { $$ = $1; }
-                | compare_expr CMP_LT term_expr { ACT_REGISTER_NODE($$, "Exp. '<' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | compare_expr CMP_LEQ term_expr { ACT_REGISTER_NODE($$, "Exp. '<=' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | compare_expr CMP_GT term_expr { ACT_REGISTER_NODE($$, "Exp. '>' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | compare_expr CMP_GEQ term_expr { ACT_REGISTER_NODE($$, "Exp. '>=' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_LT term_expr { ACT_REGISTER_NODE($$, "Expr. '<' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_LEQ term_expr { ACT_REGISTER_NODE($$, "Expr. '<=' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_GT term_expr { ACT_REGISTER_NODE($$, "Expr. '>' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_GEQ term_expr { ACT_REGISTER_NODE($$, "Expr. '>=' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
                 ;
 
 term_expr   : factor_expr { $$ = $1; }
-            | term_expr ADDOP factor_expr { ACT_REGISTER_NODE($$, "Exp. '+' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-            | term_expr SUBOP factor_expr { ACT_REGISTER_NODE($$, "Exp. '-' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | term_expr ADDOP factor_expr { ACT_REGISTER_NODE($$, "Expr. '+' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | term_expr SUBOP factor_expr { ACT_REGISTER_NODE($$, "Expr. '-' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
             ;
 
 factor_expr : unary_expr { $$ = $1; }
-            | factor_expr MULOP unary_expr { ACT_REGISTER_NODE($$, "Exp. '*' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-            | factor_expr DIVOP unary_expr { ACT_REGISTER_NODE($$, "Exp. '/' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | factor_expr MULOP unary_expr { ACT_REGISTER_NODE($$, "Expr. '*' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | factor_expr DIVOP unary_expr { ACT_REGISTER_NODE($$, "Expr. '/' Operation", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
             ;
 
 
 unary_expr  : primary_expr { $$ = $1; }
-            | NEGATE unary_expr { ACT_REGISTER_NODE($$, "Exp. Negate Operation", ""); ACT_ADD_CHILD($$, $2); } 
+            | NEGATE unary_expr { ACT_REGISTER_NODE($$, "Expr. Negate Operation", ""); ACT_ADD_CHILD($$, $2); } 
             ;
 
 primary_expr    : INTEGER  { ACT_REGISTER_NODE($$, "Int", $1); }
                 | BOOLEAN  { ACT_REGISTER_NODE($$, "Bool", $1); }
                 | STRING  { ACT_REGISTER_NODE($$, "String", $1); }
                 | THIS { ACT_REGISTER_NODE($$, "This", ""); }
-                | LP expression RP  { ACT_REGISTER_NODE($$, "Exp. ( identifier )", ""); ACT_ADD_CHILD($$, $2); }
-                | identifier { ACT_REGISTER_NODE($$, "Exp. identifier", ""); ACT_ADD_CHILD($$, $1); }
+                | LP expression RP  { ACT_REGISTER_NODE($$, "Expr. ( expression )", ""); ACT_ADD_CHILD($$, $2); }
+                | identifier { ACT_REGISTER_NODE($$, "Expr. identifier", ""); ACT_ADD_CHILD($$, $1); }
                 ;
 
 var_list    : /* empty */ { $$ = nullptr; }
@@ -201,9 +201,12 @@ var_list    : /* empty */ { $$ = nullptr; }
             ;
 
 arg_list    : /* empty */ { $$ = nullptr; }
-            | arg_list COMMA expression { $$ = $1; ACT_ADD_CHILD($$, $3); }
-            | expression { ACT_REGISTER_NODE($$, "Argument list", ""); ACT_ADD_CHILD($$, $1); }
+            | filled_arg_list { $$ = $1; }
             ;
+
+filled_arg_list : expression { ACT_REGISTER_NODE($$, "Argument list", ""); ACT_ADD_CHILD($$, $1); }
+                | expression COMMA filled_arg_list { $$ = $3; ACT_ADD_CHILD($$, $1); }
+                ;
 
 identifier : IDENTIFIER { ACT_REGISTER_NODE($$, "Identifier", $1); };
 
@@ -211,5 +214,5 @@ identifier : IDENTIFIER { ACT_REGISTER_NODE($$, "Identifier", $1); };
 
 void yy::parser::error(const std::string& errStr)
 {
-    fprintf(stderr, "PARSER ERROR OCCURED: %s at line %d.\n", errStr.c_str(), yylineno);
+    fprintf(stderr, "@error at line %d. %s.\n", yylineno, errStr.c_str());
 }
