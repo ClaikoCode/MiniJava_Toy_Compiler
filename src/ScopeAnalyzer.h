@@ -13,7 +13,7 @@ struct Scope
     bool IsInScope(Identifier& identifier) const;
 };
 
-struct SemanticAnalyzer
+struct ScopeAnalyzer
 {
     std::vector<Scope> scopeStack;
     std::unordered_map<std::string, Identifier> symbols;

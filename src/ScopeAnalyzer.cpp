@@ -1,4 +1,4 @@
-#include "SemanticAnalyzer.h"
+#include "ScopeAnalyzer.h"
 #include "ConsolePrinter.h"
 
 bool Scope::IsInScope(Identifier& identifier) const
@@ -14,7 +14,7 @@ bool Scope::IsInScope(Identifier& identifier) const
     return false;
 }
 
-void SemanticAnalyzer::pop()
+void ScopeAnalyzer::pop()
 {   
     if(scopeStack.empty())
     {
@@ -26,18 +26,18 @@ void SemanticAnalyzer::pop()
     scopeStack.pop_back();
 }
 
-void SemanticAnalyzer::push(Scope scope)
+void ScopeAnalyzer::push(Scope scope)
 {
     AddScopeToSet(scope);
     scopeStack.push_back(scope);
 }
 
-bool SemanticAnalyzer::IsInScope(Identifier& identifier) const
+bool ScopeAnalyzer::IsInScope(Identifier& identifier) const
 {
     return symbols.count(identifier.name);
 }
 
-std::string SemanticAnalyzer::BuildScopeString() const
+std::string ScopeAnalyzer::BuildScopeString() const
 {
     std::string scopeString = "";
     for(int i = 0; i < scopeStack.size(); i++)
@@ -58,7 +58,7 @@ std::string SemanticAnalyzer::BuildScopeString() const
     return scopeString;
 }
 
-void SemanticAnalyzer::AddSymbolToSet(const Identifier& symbol)
+void ScopeAnalyzer::AddSymbolToSet(const Identifier& symbol)
 {
     if(symbols.count(symbol.name))
     {
@@ -75,12 +75,12 @@ void SemanticAnalyzer::AddSymbolToSet(const Identifier& symbol)
     }
 }
 
-void SemanticAnalyzer::RemoveSymbolFromSet(const Identifier& symbol)
+void ScopeAnalyzer::RemoveSymbolFromSet(const Identifier& symbol)
 {
     symbols.erase(symbol.name);
 }
 
-void SemanticAnalyzer::ModifyScopeInSet(const Scope& scope, bool add)
+void ScopeAnalyzer::ModifyScopeInSet(const Scope& scope, bool add)
 {
     std::vector<Scope> scopeStack;
     scopeStack.size();
@@ -102,12 +102,12 @@ void SemanticAnalyzer::ModifyScopeInSet(const Scope& scope, bool add)
     }
 }
 
-void SemanticAnalyzer::AddScopeToSet(const Scope& scope)
+void ScopeAnalyzer::AddScopeToSet(const Scope& scope)
 {
     ModifyScopeInSet(scope, true);
 }
 
-void SemanticAnalyzer::RemoveScopeFromSet(const Scope& scope)
+void ScopeAnalyzer::RemoveScopeFromSet(const Scope& scope)
 {
     ModifyScopeInSet(scope, false);
 }

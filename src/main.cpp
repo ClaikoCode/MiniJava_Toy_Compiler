@@ -3,7 +3,7 @@
 
 #include "Node.h"
 #include "SymbolTable.h"
-#include "SemanticAnalyzer.h"
+#include "ScopeAnalyzer.h"
 #include "minijava_parser.tab.h"
 
 #ifndef USE_LEX_ONLY
@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
             printf("Symbol table created.\n");
             PrintSymbolTable(symbolTable);
 
-            SemanticAnalyzer semanticAnalyzer;
+            ScopeAnalyzer semanticAnalyzer;
             semanticAnalyzer.push(Scope{symbolTable});
             semanticAnalyzer.push(Scope{symbolTable->children[0]});
             semanticAnalyzer.push(Scope{symbolTable->children[0]});

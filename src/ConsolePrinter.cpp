@@ -7,7 +7,7 @@ void PrintMessage(std::FILE* stream, const char* prefix, const char* format, ...
 
     if(prefix != nullptr && prefix != "")
     {
-        std::cout << "[" << prefix << "] ";
+        fprintf(stream, "[%s] ", prefix);
     }
 
     vfprintf(stream, format, args);
