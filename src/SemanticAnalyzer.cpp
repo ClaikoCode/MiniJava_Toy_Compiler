@@ -1,4 +1,5 @@
 #include "SemanticAnalyzer.h"
+#include "ConsolePrinter.h"
 
 bool Scope::IsInScope(Identifier& identifier) const
 {
@@ -17,7 +18,7 @@ void SemanticAnalyzer::pop()
 {   
     if(scopeStack.empty())
     {
-        printf("Error: cannot pop from empty stack\n");
+        PrintError("Cannot pop from empty stack\n");
         return;
     }
 
@@ -36,38 +37,37 @@ bool SemanticAnalyzer::IsInScope(Identifier& identifier) const
     return symbols.count(identifier.name);
 }
 
-void SemanticAnalyzer::PrintCurrentScope() const
+std::string SemanticAnalyzer::BuildScopeString() const
 {
-    printf("'");
+    std::string scopeString = "";
     for(int i = 0; i < scopeStack.size(); i++)
     {   
         const Scope& scope = scopeStack[i];
         SymbolTable* symbolTable = scope.symbolTable;
-        printf("%s", symbolTable->identifier.name.c_str());
+        scopeString += symbolTable->identifier.name;
         if(i < scopeStack.size()-1)
         {
-            printf("::");
+            scopeString += "::";
         }
         if(symbolTable->identifier.record == IdentifierRecord::FUNCTION)
         {
-            printf("()");
+            scopeString += "()";
         }
     }
-    printf("'");
+
+    return scopeString;
 }
 
 void SemanticAnalyzer::AddSymbolToSet(const Identifier& symbol)
 {
     if(symbols.count(symbol.name))
     {
-        printf(
-            "Error: redeclaration of %s %s in scope ", 
+        PrintError(
+            "Redeclaration of %s %s in scope '%s'.\n", 
             IdentifierRecordToString(symbol.record).c_str(), 
-            symbol.name.c_str()
+            symbol.name.c_str(),
+            BuildScopeString().c_str()
         );
-
-        PrintCurrentScope();
-        printf(".\n");
     }
     else
     {

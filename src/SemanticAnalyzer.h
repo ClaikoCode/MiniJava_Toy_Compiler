@@ -23,7 +23,7 @@ struct SemanticAnalyzer
     bool IsInScope(Identifier& identifier) const;
 
 private:
-    void PrintCurrentScope() const;
+    std::string BuildScopeString() const;
     void AddSymbolToSet(const Identifier& symbol);
     void RemoveSymbolFromSet(const Identifier& symbol);
     void ModifyScopeInSet(const Scope& scope, bool add);

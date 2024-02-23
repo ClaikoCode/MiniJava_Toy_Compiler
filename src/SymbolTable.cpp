@@ -3,6 +3,7 @@
 
 #include "Node.h"
 #include "SymbolTable.h"
+#include "ConsolePrinter.h"
 
 std::string IdentifierRecordToString(IdentifierRecord record)
 {
@@ -100,20 +101,20 @@ void PrintDepthIndent(int depth)
 {
     for(int i = 0; i < depth; i++)
     {
-        printf("|  ");
+        PrintRaw("|  ");
     }
 }
 
-void PrintIdentifier(Identifier& identifier, int depth)
+void PrintIdentifierRaw(Identifier& identifier, int depth)
 {
-    printf("%d - %s %s\n", identifier.lineno, identifier.type.c_str(), identifier.name.c_str());
+    PrintRaw("%d - %s %s\n", identifier.lineno, identifier.type.c_str(), identifier.name.c_str());
 }
 
 void PrintIdentifier(const std::string& prefix, Identifier& identifier, int depth)
 {
     PrintDepthIndent(depth);
-    printf("%s:", prefix.c_str());
-    PrintIdentifier(identifier, depth);
+    PrintRaw("%s:", prefix.c_str());
+    PrintIdentifierRaw(identifier, depth);
 }
 
 void PrintFunctionIdentifier(Identifier& identifier, int depth)
