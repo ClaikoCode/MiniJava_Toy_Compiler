@@ -108,7 +108,7 @@ void PrintDepthIndent(int depth)
 
 void PrintIdentifierRaw(Identifier& identifier, int depth)
 {
-    PrintRaw("%d - %s %s\n", identifier.lineno, identifier.type.c_str(), identifier.name.c_str());
+    PrintRaw("%d - %s %s\n", identifier.lineno, identifier.info.type.c_str(), identifier.name.c_str());
 }
 
 void PrintIdentifier(const std::string& prefix, Identifier& identifier, int depth)
@@ -135,15 +135,15 @@ void PrintClassIdentifier(Identifier& identifier, int depth)
 
 void PrintSymbolTable(SymbolTable* symbolTable, int depth/*=0*/)
 {
-    if(symbolTable->identifier.record == IdentifierRecord::FUNCTION)
+    if(symbolTable->identifier.info.record == IdentifierRecord::FUNCTION)
     {
         PrintFunctionIdentifier(symbolTable->identifier, depth);
     }
-    else if (symbolTable->identifier.record == IdentifierRecord::CLASS)
+    else if (symbolTable->identifier.info.record == IdentifierRecord::CLASS)
     {
         PrintClassIdentifier(symbolTable->identifier, depth);
     }
-    else if (symbolTable->identifier.record == IdentifierRecord::UNKNOWN)
+    else if (symbolTable->identifier.info.record == IdentifierRecord::UNKNOWN)
     {
         PrintIdentifier("UNKNOWN", symbolTable->identifier, depth);
     }

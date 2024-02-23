@@ -17,13 +17,19 @@ std::string IdentifierRecordToString(IdentifierRecord record);
 typedef std::string IdentifierDatatype;
 constexpr char* NO_TYPE = "(typeless)";
 
+struct SymbolInfo
+{
+    IdentifierRecord record;
+    IdentifierDatatype type;
+};
+
 struct Identifier
 {
     Identifier() 
-        : name("NULL IDENTIFIER"), lineno(-1), record(IdentifierRecord::UNKNOWN), type(NO_TYPE) {}
+        : name("NULL IDENTIFIER"), lineno(-1), info({IdentifierRecord::UNKNOWN, NO_TYPE}) {}
 
     Identifier(std::string name, int lineno, IdentifierRecord record, IdentifierDatatype type)
-        : name(name), lineno(lineno), record(record), type(type) {}
+        : name(name), lineno(lineno), info({record, type}) {}
 
     bool operator==(const Identifier& other) const
     {
@@ -37,8 +43,7 @@ struct Identifier
 
     std::string name;
     int lineno;
-    IdentifierRecord record;
-    IdentifierDatatype type;
+    SymbolInfo info;
 };
 
 struct SymbolTable{

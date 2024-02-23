@@ -49,7 +49,7 @@ std::string ScopeAnalyzer::BuildScopeString() const
         {
             scopeString += "::";
         }
-        if(symbolTable->identifier.record == IdentifierRecord::FUNCTION)
+        if(symbolTable->identifier.info.record == IdentifierRecord::FUNCTION)
         {
             scopeString += "()";
         }
@@ -64,7 +64,7 @@ void ScopeAnalyzer::AddSymbolToSet(const Identifier& symbol)
     {
         PrintError(
             "Redeclaration of %s %s in scope '%s'.\n", 
-            IdentifierRecordToString(symbol.record).c_str(), 
+            IdentifierRecordToString(symbol.info.record).c_str(), 
             symbol.name.c_str(),
             BuildScopeString().c_str()
         );
