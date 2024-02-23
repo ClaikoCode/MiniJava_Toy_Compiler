@@ -8,6 +8,9 @@ src/*.yy.*
 src/*.tab.*
 bin/*
 
+tree.dot
+tree.pdf
+
 # Any folder that contains should be tracked. 
 # Which files inside it to track should be clear in the above statements.
 !*.gitkeep
