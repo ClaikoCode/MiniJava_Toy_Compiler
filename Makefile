@@ -18,7 +18,7 @@ PROGRAM_OUT = $(ODIR)/compiler
 TEST_FOLDER = ./test_files
 TEST_FILE = ./experiments/testText3.java
 TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
-TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
+TEST_FILE = $(TEST_FOLDER)/valid/BinaryTree.java
 
 
 compiler: scanner parser

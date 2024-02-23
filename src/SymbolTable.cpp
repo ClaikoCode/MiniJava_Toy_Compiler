@@ -4,6 +4,7 @@
 #include "Node.h"
 #include "SymbolTable.h"
 #include "ConsolePrinter.h"
+#include "CompilerStringDefines.h"
 
 std::string IdentifierRecordToString(IdentifierRecord record)
 {
@@ -61,7 +62,7 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
         const std::string& nodeType = child->type;
         const std::string& nodeValue = child->value;
 
-        if(nodeType == "Class Declaration")
+        if(nodeType == N_STR_CLASS_DECL)
         {
             std::string& className = GetChildAtIndex(child, 0)->value;
             Identifier identifier(className, child->lineno, IdentifierRecord::CLASS, NO_TYPE);
@@ -69,7 +70,7 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
             SymbolTable* newSymbolTable = symbolTable->AddSymbolTable(identifier);
             BuildSymbolTable(child, newSymbolTable);
         }
-        else if(nodeType == "Method Declaration")
+        else if(nodeType == N_STR_METHOD_DECL)
         {
             std::string& methodName = GetChildAtIndex(child, 0)->value;
             IdentifierDatatype returnType = GetMethodReturnType(child);
