@@ -85,29 +85,3 @@ STRING_PTRN [a-zA-Z0-9]
 <<EOF>>                                     { return yy::parser::make_END(); }
 
 %%
-
-int main(int argc, char* argv[])
-{
-    if(USE_LEX_ONLY)
-    {
-        yylex();
-    }
-    else
-    {
-        yy::parser parser;
-        bool parseSuccess = !parser.parse();        
-
-        if(lexical_errors)
-            return 1;
-        
-        if(parseSuccess)
-        {
-            printf("Printing tree:\n");
-            rootNode->print_tree();
-            printf("\nGenerating tree:\n");
-            rootNode->generate_tree();
-        }
-    }
-
-    return 0;
-}
