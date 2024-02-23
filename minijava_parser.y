@@ -69,18 +69,18 @@ main_class  : PUBLIC CLASS identifier
               RCB { ACT_REGISTER_NODE($$, "Main class", ""); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); ACT_ADD_CHILD($$, $17); };
 
 class_decl_batch    : /* empty */ { $$ = nullptr; }
-                    | class_decl_batch class_declaration { ACT_REGISTER_IF_NULL($$, $1, "Class declarations", ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
+                    | class_decl_batch class_declaration { ACT_REGISTER_IF_NULL($$, $1, "Class Declarations", ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
                     ;
 
 class_declaration   : CLASS identifier LCB var_decl_batch method_decl_batch RCB { ACT_REGISTER_NODE($$, "Class Declaration", ""); ACT_ADD_CHILD($$, $2); ACT_ADD_CHILD($$, $4); ACT_ADD_CHILD($$, $5); };
 
 method_decl_batch   : /* empty */ { $$ = nullptr; }
-                    | method_decl_batch method_declaration { ACT_REGISTER_IF_NULL($$, $1, "Method declarations", ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
+                    | method_decl_batch method_declaration { ACT_REGISTER_IF_NULL($$, $1, "Method Declarations", ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
                     ;
 
 method_declaration  : PUBLIC type identifier LP var_list RP 
                         LCB method_body return_statement RCB { 
-                                ACT_REGISTER_NODE($$, "Method declaration", $2);
+                                ACT_REGISTER_NODE($$, "Method Declaration", $2);
                                 ACT_ADD_CHILD($$, $3);
                                 ACT_ADD_CHILD($$, $5);
                                 ACT_ADD_CHILD($$, $8);
@@ -192,7 +192,7 @@ primary_expr    : INTEGER  { ACT_REGISTER_NODE($$, "Int", $1); }
                 | STRING  { ACT_REGISTER_NODE($$, "String", $1); }
                 | THIS { ACT_REGISTER_NODE($$, "This", ""); }
                 | LP expression RP  { ACT_REGISTER_NODE($$, "Expr. ( expression )", ""); ACT_ADD_CHILD($$, $2); }
-                | identifier { ACT_REGISTER_NODE($$, "Expr. identifier", ""); ACT_ADD_CHILD($$, $1); }
+                | identifier { $$ = $1; }
                 ;
 
 var_list    : /* empty */ { $$ = nullptr; }
