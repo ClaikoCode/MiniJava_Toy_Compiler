@@ -24,16 +24,17 @@
 #define N_STR_METHOD_CALL "Method Call"
 #define N_STR_LENGTH "Length"
 #define N_STR_INDEX "Index"
-#define N_STR_NEW "New"
+#define N_STR_NEW "New()"
 #define N_STR_NEW_ARR "New Array"
 #define N_STR_IF "If"
 #define N_STR_ELSE "Else"
 #define N_STR_ELIFS "Elifs"
-#define N_STR_ELIF_BLOCK "Elif Block"
+#define N_STR_ELIF "Elif"
 #define N_STR_WHILE "While"
 
 #define N_STR_ASSIGNMENT "Assignment"
-#define N_STR_OPERATION "Operation"
+#define N_STR_BINARY_OPERATION "Binary Operation"
+#define N_STR_UNARY_OPERATION "Unary Operation"
 #define N_STR_EXPRESSION "Expression"
 #define N_STR_STATEMENT "Statement"
 #define N_STR_STATEMENTS "Statements"
@@ -43,6 +44,9 @@
 #define N_STR_SYSTEM_PRINT "System Print"
 #define N_STR_CONDITIONAL_BRANCH "Conditional Branch"
 #define N_STR_CLOSED_EXPR "Closed Expression"
+#define N_STR_PROGRAM "Program"
+#define N_STR_MAIN_CLASS "Main Class"
+
 
 // Operator strings
 #define O_STR_ADD "+" 

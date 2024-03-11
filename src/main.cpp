@@ -5,6 +5,7 @@
 #include "SymbolTable.h"
 #include "ScopeAnalyzer.h"
 #include "minijava_parser.tab.h"
+#include "StatementAnalyzer.h"
 
 #ifndef USE_LEX_ONLY
     #define USE_LEX_ONLY 0
@@ -37,18 +38,23 @@ int main(int argc, char* argv[])
             rootNode->generate_tree();
 
             printf("Creating symbol table...\n");
-            SymbolTable* symbolTable = new SymbolTable(Identifier("global", 0, IdentifierRecord::UNKNOWN, NO_TYPE), nullptr);
-            BuildSymbolTable(rootNode, symbolTable);
+            SymbolTable* rootSymbolTable = new SymbolTable(Identifier("global", SymbolRecord::UNKNOWN, 0, NO_TYPE), rootNode, nullptr);
+            BuildSymbolTable(rootNode, rootSymbolTable);
             printf("Symbol table created.\n");
-            PrintSymbolTable(symbolTable);
+            PrintSymbolTable(rootSymbolTable);
 
-            ScopeAnalyzer semanticAnalyzer;
-            semanticAnalyzer.push(Scope{symbolTable});
-            semanticAnalyzer.push(Scope{symbolTable->children[0]});
-            semanticAnalyzer.push(Scope{symbolTable->children[0]});
-            
+            ScopeAnalyzer scopeAnalyzer;
+            printf("\n");
+            AnalyzeStructure(rootNode, rootSymbolTable, scopeAnalyzer);
+            printf("\n");
+        }
+        else
+        {
+            printf("Parse failed. No semantic analysis will be performed.\n");
         }
     }
+
+
 
     return 0;
 }

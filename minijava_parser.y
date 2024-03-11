@@ -2,6 +2,7 @@
 %require "3.2"
 
 %code requires{
+    #include <cassert>
     #include <stdio.h>
     #include <iostream>
     #include "Node.h"
@@ -19,6 +20,7 @@
     #define ACT_ADD_CHILD(parent, child) if(parent != nullptr && child != nullptr) parent->children.push_back(child)
     #define ACT_REGISTER_NODE(target, type, value) target = ACT_NEW_NODE(type, value)
     #define ACT_REGISTER_IF_NULL(target, node, type, value) if(node == nullptr) { ACT_REGISTER_NODE(target, type, value); node = target; }
+    #define ACT_COPY_LINENO(dest, source) { dest.lineno = source.lineno; }
 }
 
 %define parse.error verbose
@@ -42,7 +44,7 @@
 %type <std::string> type
 %type <Node*> goal main_class class_decl_batch class_declaration method_decl_batch method_declaration return_statement method_body var_decl_batch var_declaration variable
 %type <Node*> statement statement_batch if_clause elif_clause else_clause var_list arg_list identifier filled_arg_list
-%type <Node*> expression logical_expr equality_expr compare_expr term_expr factor_expr unary_expr primary_expr
+%type <Node*> expression logical_expr equality_expr compare_expr term_expr factor_expr unary_expr primary_expr proto_expr method_call
 
 %precedence IF
 %precedence ELIF
@@ -59,7 +61,7 @@
 %%
 root    : goal { rootNode = $1; };
 
-goal    : main_class class_decl_batch END { ACT_REGISTER_NODE($$, "Program", ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $2); };
+goal    : main_class class_decl_batch END { ACT_REGISTER_NODE($$, N_STR_PROGRAM, ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $2); };
 
 main_class  : PUBLIC CLASS identifier 
               LCB 
@@ -67,7 +69,7 @@ main_class  : PUBLIC CLASS identifier
                 LCB 
                     statement statement_batch 
                 RCB 
-              RCB { ACT_REGISTER_NODE($$, "Main class", ""); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); ACT_ADD_CHILD($$, $17); };
+              RCB { ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); ACT_ADD_CHILD($$, $17); };
 
 class_decl_batch    : /* empty */ { $$ = nullptr; }
                     | class_decl_batch class_declaration { ACT_REGISTER_IF_NULL($$, $1, N_STR_CLASS_DECLS, ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
@@ -102,11 +104,11 @@ var_decl_batch  : /* empty */ { $$ = nullptr; }
 var_declaration : variable SEMI_COLON { $$ = $1; };
 variable : type identifier { ACT_REGISTER_NODE($$, N_STR_VARIABLE, $1); ACT_ADD_CHILD($$, $2); };
 
-type        : T_ARR
-            | T_BOOLEAN
-            | T_INT
-            | T_STRING
-            | T_VOID
+type        : T_ARR { $$ = T_STR_ARRAY; }
+            | T_BOOLEAN { $$ = T_STR_BOOLEAN; }
+            | T_INT { $$ = T_STR_INT; }
+            | T_STRING { $$ = T_STR_STRING; }
+            | T_VOID { $$ = T_STR_VOID; }
             | identifier { $$ = $1->value; }
             ;
 
@@ -136,7 +138,7 @@ elif_clause     : /* empty */ { $$ = nullptr; }
                         ACT_REGISTER_IF_NULL($$, $1, N_STR_ELIFS, ""); 
 
                         $$ = $1; 
-                        Node* elifNode = ACT_NEW_NODE(N_STR_ELIF_BLOCK, ""); 
+                        Node* elifNode = ACT_NEW_NODE(N_STR_ELIF, ""); 
                         ACT_ADD_CHILD(elifNode, $4);
                         ACT_ADD_CHILD(elifNode, $6);
 
@@ -150,51 +152,59 @@ else_clause     : /* empty */ { $$ = nullptr; }
 
 expression  : logical_expr { $$ = $1; }
             | NEW T_INT LB expression RB { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_NEW_ARR); ACT_ADD_CHILD($$, $4); }
-            | NEW identifier LP RP { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_NEW); ACT_ADD_CHILD($$, $2); }
             | expression LB expression RB { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_INDEX); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
             | expression DOT LENGTH { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_LENGTH); ACT_ADD_CHILD($$, $1); }
-            | expression DOT identifier LP arg_list RP  { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_METHOD_CALL); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
             ;
 
+
 logical_expr    : equality_expr { $$ = $1; }
-                | logical_expr OR equality_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_OR); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | logical_expr AND equality_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_AND); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | logical_expr OR equality_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_OR); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | logical_expr AND equality_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_AND); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
                 ;
 
 equality_expr   : compare_expr { $$ = $1; }
-                | equality_expr CMP_NEQ compare_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_NE); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | equality_expr CMP_EQ compare_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_EQ); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | equality_expr CMP_NEQ compare_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_NE); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | equality_expr CMP_EQ compare_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_EQ); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
                 ;
 
 compare_expr    : term_expr { $$ = $1; }
-                | compare_expr CMP_LT term_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_LT); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | compare_expr CMP_LEQ term_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_LEQ); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | compare_expr CMP_GT term_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_GT); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | compare_expr CMP_GEQ term_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_GEQ); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_LT term_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_LT); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_LEQ term_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_LEQ); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_GT term_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_GT); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | compare_expr CMP_GEQ term_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_GEQ); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
                 ;
 
 term_expr   : factor_expr { $$ = $1; }
-            | term_expr ADDOP factor_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_ADD); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-            | term_expr SUBOP factor_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_SUB); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | term_expr ADDOP factor_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_ADD); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | term_expr SUBOP factor_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_SUB); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
             ;
 
 factor_expr : unary_expr { $$ = $1; }
-            | factor_expr MULOP unary_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_MUL); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-            | factor_expr DIVOP unary_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_DIV); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | factor_expr MULOP unary_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_MUL); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+            | factor_expr DIVOP unary_expr { ACT_REGISTER_NODE($$, N_STR_BINARY_OPERATION, O_STR_DIV); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
             ;
 
 
 unary_expr  : primary_expr { $$ = $1; }
-            | NEGATE unary_expr { ACT_REGISTER_NODE($$, N_STR_OPERATION, O_STR_NOT); ACT_ADD_CHILD($$, $2); } 
+            | NEGATE unary_expr { ACT_REGISTER_NODE($$, N_STR_UNARY_OPERATION, O_STR_NOT); ACT_ADD_CHILD($$, $2); } 
             ;
 
 primary_expr    : INTEGER  { ACT_REGISTER_NODE($$, T_STR_INT, $1); }
                 | BOOLEAN  { ACT_REGISTER_NODE($$, T_STR_BOOLEAN, $1); }
                 | STRING  { ACT_REGISTER_NODE($$, T_STR_STRING, $1); }
-                | THIS { ACT_REGISTER_NODE($$, T_STR_THIS, ""); }
                 | LP expression RP  { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_CLOSED_EXPR); ACT_ADD_CHILD($$, $2); }
-                | identifier { $$ = $1; }
+                | method_call { $$ = $1; }
+                | proto_expr { $$ = $1; }
                 ;
+
+method_call     : method_call DOT identifier LP arg_list RP { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_METHOD_CALL); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
+                | proto_expr DOT identifier LP arg_list RP { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_METHOD_CALL); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
+                | NEW identifier LP RP { ACT_REGISTER_NODE($$, N_STR_EXPRESSION, N_STR_NEW); ACT_ADD_CHILD($$, $2); }
+                ;
+
+proto_expr  : THIS { ACT_REGISTER_NODE($$, T_STR_THIS, ""); }
+            | identifier { $$ = $1; }
+            ;
 
 var_list    : /* empty */ { $$ = nullptr; }
             | var_list COMMA variable { $$ = $1; ACT_ADD_CHILD($$, $3); }
