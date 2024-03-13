@@ -16,7 +16,8 @@ PROGRAM_OUT = $(ODIR)/compiler
 TEST_FOLDER = ./test_files
 TEST_FILE = ./experiments/testText3.java
 TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
-TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
+TEST_FILE = $(TEST_FOLDER)/valid/LinearSearch.java
+TEST_FILE = $(TEST_FOLDER)/tree_validation/OperatorPriority.java
 
 
 compiler: scanner parser
@@ -36,5 +37,8 @@ clean:
 
 tree:
 	dot -Tpdf tree.dot -o tree.pdf
+
+syntax_test: compiler
+	python3 ./testScript.py -syntax
 
 all: run tree

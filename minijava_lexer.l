@@ -5,6 +5,7 @@
     #include "Node.h"
 
     #define USE_LEX_ONLY 0
+    #define PRINT_TREE 0
 
     #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(#token == "IDENTIFIER"){ printf("'%s' ", yytext); } } else { return yy::parser::make_##token(yytext); }
     int lexical_errors = 0;
@@ -34,13 +35,11 @@ ALPHANUM_PTRN [a-zA-Z0-9_]
 "void"                                      { REGISTER_TOKEN(T_VOID); }
 
 "public"                                    { REGISTER_TOKEN(PUBLIC); }
-"private"                                   { REGISTER_TOKEN(PRIVATE); }
 "static"                                    { REGISTER_TOKEN(STATIC); }
 "class"                                     { REGISTER_TOKEN(CLASS); }
 
 "if"                                        { REGISTER_TOKEN(IF); }
 "else"                                      { REGISTER_TOKEN(ELSE); }
-"for"                                       { REGISTER_TOKEN(FOR); }
 "while"                                     { REGISTER_TOKEN(WHILE); }                                
 "new"                                       { REGISTER_TOKEN(NEW); }                                
 "return"                                    { REGISTER_TOKEN(RETURN)};                                
@@ -100,8 +99,12 @@ int main(int argc, char* argv[])
         
         if(parseSuccess)
         {
-            printf("Printing tree:\n");
-            rootNode->print_tree();
+            if (PRINT_TREE)
+            {
+                printf("Printing tree:\n");
+                rootNode->print_tree();
+            }
+           
             printf("\nGenerating tree:\n");
             rootNode->generate_tree();
         }

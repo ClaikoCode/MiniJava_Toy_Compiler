@@ -29,9 +29,9 @@
 
 %token <std::string> T_INT "Integer type" T_BOOLEAN "Boolean type" T_ARR "Array type" T_VOID "Void type" T_STRING "String type"
 %token <std::string> IDENTIFIER "Identifier" INTEGER "Integer literal" BOOLEAN "Boolean literal" STRING "String literal"
-%token <std::string> CLASS PUBLIC PRIVATE STATIC
+%token <std::string> CLASS PUBLIC STATIC
 %token <std::string> EQU "=" SEMI_COLON ";" COMMA "," DOT "." NEGATE "!"
-%token <std::string> IF ELSE ELIF FOR WHILE NEW RETURN THIS
+%token <std::string> IF ELSE WHILE NEW RETURN THIS
 %token <std::string> ADDOP "+" SUBOP "-" MULOP "*" DIVOP "/"
 %token <std::string> LB "[" RB "]" LCB "{" RCB "}" LP "(" RP ")"
 %token <std::string> CMP_EQ "==" CMP_NEQ "!=" CMP_LT "<" CMP_LEQ "<=" CMP_GT ">" CMP_GEQ ">=" 
