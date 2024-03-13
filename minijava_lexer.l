@@ -1,7 +1,7 @@
 %{
     #include <stdio.h>
     #include <assert.h>
-    #include "minijava_parser.tab.h"
+    #include "minijava_parser.tab.hh"
     #include "Node.h"
 
     #define USE_LEX_ONLY 0

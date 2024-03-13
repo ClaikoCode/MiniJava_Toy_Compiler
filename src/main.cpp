@@ -4,11 +4,17 @@
 #include "Node.h"
 #include "SymbolTable.h"
 #include "ScopeAnalyzer.h"
-#include "minijava_parser.tab.h"
+#include "minijava_parser.tab.hh"
 #include "StatementAnalyzer.h"
 
 #ifndef USE_LEX_ONLY
     #define USE_LEX_ONLY 0
+#endif
+
+#if YYDEBUG
+   int yydebug;
+#else
+    static int yydebug = 0;
 #endif
 
 extern int yylex();
@@ -18,6 +24,10 @@ extern Node* rootNode;
 
 int main(int argc, char* argv[])
 {
+    #if YYDEBUG
+        yydebug = 1;
+    #endif
+
     if(USE_LEX_ONLY)
     {
         yylex();
@@ -25,7 +35,7 @@ int main(int argc, char* argv[])
     else
     {
         yy::parser parser;
-        bool parseSuccess = !parser.parse();        
+        bool parseSuccess = !parser.parse();      
 
         if(lexical_errors)
             return 1;
@@ -51,10 +61,9 @@ int main(int argc, char* argv[])
         else
         {
             printf("Parse failed. No semantic analysis will be performed.\n");
+            return 1;
         }
     }
-
-
 
     return 0;
 }

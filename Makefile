@@ -5,11 +5,11 @@ CFLAGS = -g -w -std=c++14
 CC = g++
 
 FLEX_FILE = minijava_lexer.l
-PARSE_FILE = minijava_parser.y
+PARSE_FILE = minijava_parser.yy
 
 FLEX_OUT = $(patsubst %.l, $(SRCDIR)/%.yy.c, $(FLEX_FILE))
-PARSER_OUT = $(patsubst %.y, $(SRCDIR)/%.tab.c, $(PARSE_FILE))
-PARSER_HEADER = $(patsubst %.c, %.h, $(PARSER_OUT))
+PARSER_OUT = $(patsubst %.yy, $(SRCDIR)/%.tab.cc, $(PARSE_FILE))
+PARSER_HEADER = $(patsubst %.cc, %.hh, $(PARSER_OUT))
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 
 
@@ -31,7 +31,6 @@ compiler: scanner parser
 parser: $(PARSE_FILE)
 	bison -d -o $(PARSER_OUT) $(PARSE_FILE)
 	
-
 scanner:
 	flex -o $(FLEX_OUT) $(FLEX_FILE)
 
