@@ -5,6 +5,7 @@
     #include "Node.h"
 
     #define USE_LEX_ONLY 0
+    #define PRINT_TREE 0
 
     #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(#token == "IDENTIFIER"){ printf("'%s' ", yytext); } } else { return yy::parser::make_##token(yytext); }
     int lexical_errors = 0;
@@ -19,7 +20,6 @@
 NUMBER_PTRN [0-9]
 LETTER_PTRN [a-zA-Z]
 ALPHANUM_PTRN [a-zA-Z0-9_]
-STRING_PTRN [a-zA-Z0-9]
 
 %% 
 
@@ -35,14 +35,11 @@ STRING_PTRN [a-zA-Z0-9]
 "void"                                      { REGISTER_TOKEN(T_VOID); }
 
 "public"                                    { REGISTER_TOKEN(PUBLIC); }
-"private"                                   { REGISTER_TOKEN(PRIVATE); }
 "static"                                    { REGISTER_TOKEN(STATIC); }
 "class"                                     { REGISTER_TOKEN(CLASS); }
 
 "if"                                        { REGISTER_TOKEN(IF); }
 "else"                                      { REGISTER_TOKEN(ELSE); }
-"else if"                                   { REGISTER_TOKEN(ELIF); }
-"for"                                       { REGISTER_TOKEN(FOR); }
 "while"                                     { REGISTER_TOKEN(WHILE); }                                
 "new"                                       { REGISTER_TOKEN(NEW); }                                
 "return"                                    { REGISTER_TOKEN(RETURN)};                                

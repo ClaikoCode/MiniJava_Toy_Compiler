@@ -43,4 +43,7 @@ clean:
 tree:
 	dot -Tpdf tree.dot -o tree.pdf
 
+syntax_test: compiler
+	python3 ./testScript.py -syntax
+
 all: run tree

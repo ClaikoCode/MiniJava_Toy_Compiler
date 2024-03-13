@@ -28,8 +28,6 @@
 #define N_STR_NEW_ARR "New Array"
 #define N_STR_IF "If"
 #define N_STR_ELSE "Else"
-#define N_STR_ELIFS "Elifs"
-#define N_STR_ELIF "Elif"
 #define N_STR_WHILE "While"
 
 #define N_STR_ASSIGNMENT "Assignment"
@@ -53,7 +51,6 @@
 #define O_STR_SUB "-" 
 #define O_STR_MUL "*" 
 #define O_STR_DIV "/"
-#define O_STR_MOD "%" 
 #define O_STR_LT "<" 
 #define O_STR_GT ">" 
 #define O_STR_LEQ "<=" 
@@ -63,9 +60,3 @@
 #define O_STR_AND "&&" 
 #define O_STR_OR "||" 
 #define O_STR_NOT "!" 
-
-
-
-
-
-
