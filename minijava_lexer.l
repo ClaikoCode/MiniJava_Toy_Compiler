@@ -19,7 +19,6 @@
 NUMBER_PTRN [0-9]
 LETTER_PTRN [a-zA-Z]
 ALPHANUM_PTRN [a-zA-Z0-9_]
-STRING_PTRN [a-zA-Z0-9]
 
 %% 
 
@@ -41,7 +40,6 @@ STRING_PTRN [a-zA-Z0-9]
 
 "if"                                        { REGISTER_TOKEN(IF); }
 "else"                                      { REGISTER_TOKEN(ELSE); }
-"else if"                                   { REGISTER_TOKEN(ELIF); }
 "for"                                       { REGISTER_TOKEN(FOR); }
 "while"                                     { REGISTER_TOKEN(WHILE); }                                
 "new"                                       { REGISTER_TOKEN(NEW); }                                
