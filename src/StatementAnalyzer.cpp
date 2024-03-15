@@ -1,59 +1,65 @@
 #include <unordered_set>
+#include <algorithm> // std::reverse
 
 #include "StatementAnalyzer.h"
 #include "ConsolePrinter.h"
 #include "CompilerStringDefines.h"
 #include "NodeHelperFunctions.h"
+#include "CompilerPrinter.h"
 
-
-/*
-
-    //TODO: for next session
-
-    See if it is worth it to change the grammar file so that each line is represented properly in the AST.
-    This would make compiler error messages more accurate and easier to understand.
-
-    Create a function for each type of statement that is analyzed. This will make the code easier to read and understand.
-    This can be done by creating a function with a macro for each type of thing that is analyzed.
-    These functions can then be stored in an unorderedmap where the key is the type of the node and the value is the function.
-    Because all the functions have the same signature, they can be stored in the same map.
-    One map can be created for each type of statement that is analyzed.
-
-*/
-
-#define CompilerErr(format, ...) PrintRaw("@error %s:%d | " format, scopeAnalyzer.BuildScopeString().c_str(), astRoot->lineno, ##__VA_ARGS__)
+#define CompilerErr(affectedNode, format, ...) PrintCompErr(format, affectedNode->lineno, scopeAnalyzer.BuildScopeString().c_str(), ##__VA_ARGS__)
 
 // This map is used to store temporary symbols that are used in expressions.
 static std::unordered_map<std::string, SymbolInfo> tempSymbolMap = {
     { T_STR_BOOLEAN , SymbolInfo(-1, T_STR_BOOLEAN) },
     { T_STR_INT , SymbolInfo(-1, T_STR_INT) },
     { T_STR_STRING , SymbolInfo(-1, T_STR_STRING) },
-    { T_STR_VOID , SymbolInfo(-1, T_STR_VOID) }
+    { T_STR_VOID , SymbolInfo(-1, T_STR_VOID) },
+    { T_STR_ARRAY , SymbolInfo(-1, T_STR_ARRAY) }
 };
 
-bool OperationIsComparison(const std::string& operation)
+bool OperationIsBinLogical(const std::string& operation)
 {
-    static unordered_set<std::string> comparisonOperations = {
+    static unordered_set<std::string> binLogicalOperations = {
+        O_STR_AND,
+        O_STR_OR
+    };
+
+    return binLogicalOperations.count(operation) > 0;
+}
+
+bool OperationIsBinEquality(const std::string& operation)
+{
+    static unordered_set<std::string> equalityOperations = {
+        O_STR_EQ,
+        O_STR_NE
+    };
+
+    return equalityOperations.count(operation) > 0;
+}
+
+bool OperationIsBinArithmetic(const std::string& operation)
+{
+    static unordered_set<std::string> arithmeticOperations = {
+        O_STR_ADD,
+        O_STR_SUB,
+        O_STR_MUL,
+        O_STR_DIV
+    };
+
+    return arithmeticOperations.count(operation) > 0;
+}
+
+bool OperationIsBinArithmeticComparison(const std::string& operation)
+{
+    static unordered_set<std::string> arithmeticComparisonOperations = {
         O_STR_LT,
         O_STR_GT,
         O_STR_LEQ,
         O_STR_GEQ
     };
 
-    return comparisonOperations.count(operation) > 0;
-}
-
-bool OperationIsArithmetic(const std::string& operation)
-{
-    static unordered_set<std::string> arithmeticOperations = {
-        O_STR_ADD,
-        O_STR_SUB,
-        O_STR_MUL,
-        O_STR_DIV,
-        O_STR_MOD
-    };
-
-    return arithmeticOperations.count(operation) > 0;
+    return arithmeticComparisonOperations.count(operation) > 0;
 }
 
 bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, ScopeAnalyzer& scopeAnalyzer)
@@ -80,9 +86,19 @@ bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, S
     // Loop through all method declarations and analyze them
     else if(astRoot->type == N_STR_CLASS_DECL)
     {
-        for(auto child : symbolTableRoot->children)
+        Node* variableDeclarations = GetNodeChildWithName(astRoot, N_STR_VARIABLE_DECLS);
+        if(variableDeclarations != nullptr)
         {
-            AnalyzeStructure(child->astNode, child, scopeAnalyzer);
+            // Analyze the variable declarations
+            for(auto variableDeclaration : variableDeclarations->children)
+            {
+                AnalyzeStatement(variableDeclaration, scopeAnalyzer);
+            }
+        }
+
+        for(auto methodSymbolTable : symbolTableRoot->children)
+        {
+            AnalyzeStructure(methodSymbolTable->astNode, methodSymbolTable, scopeAnalyzer);
         }
     }
     else if(astRoot->type == N_STR_MAIN_CLASS)
@@ -90,48 +106,48 @@ bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, S
         // Main class is just a set of statements, so analyze them.
         for(auto statementNode : astRoot->children)
         {
-            AnalyzeStatement(statementNode, symbolTableRoot, scopeAnalyzer);
+            AnalyzeStatement(statementNode, scopeAnalyzer);
         }
     }
     else if(astRoot->type == N_STR_METHOD_DECL)
     {
-        // 1. Check if the return type is valid
-        Symbol methodSearchSymbol = Symbol(*GetMethodIdentifierName(astRoot), SymbolRecord::METHOD);
         const Identifier* methodIdentifier = scopeAnalyzer.GetCurrentMethod();
         const Node* returnNode = GetReturnNode(astRoot);
 
         // If the method identifier is null, then the method is faulty.
         if(methodIdentifier != nullptr && returnNode != nullptr)
         {
-            const IdentifierDatatype& expectedReturnType = methodIdentifier->symbolinfo.type;
-            const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, symbolTableRoot, scopeAnalyzer);
+            // Analyze the method body
+            Node *methodBodyNode = GetNodeChildWithName(astRoot, N_STR_METHOD_BODY);
+            AnalyzeStatement(methodBodyNode, scopeAnalyzer);
 
-            if(returnInfo == nullptr || returnInfo->type != expectedReturnType)
+            // Analyze the return statement
+            const IdentifierDatatype& expectedReturnType = methodIdentifier->symbolinfo.type;
+            const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, scopeAnalyzer);
+
+            if(returnInfo != nullptr)
             {
-                CompilerErr(
-                    "Method '%s' has incorrect return type (expected '%s', got '%s').\n", 
-                    methodIdentifier->symbol.GetName(), 
-                    expectedReturnType.c_str(), 
-                    returnInfo->type.c_str()
-                );
+                if(returnInfo->type != expectedReturnType)
+                {
+                    CompilerErr(
+                        returnNode,
+                        "Method '%s' has incorrect return type (expected '%s', got '%s').\n",
+                        methodIdentifier->symbol.GetName(),
+                        expectedReturnType.c_str(),
+                        returnInfo->type.c_str()
+                    );
+                }
             }
-            else
-            {
-                // Analyze the method body
-                Node* methodBodyNode = GetNodeChildWithName(astRoot, N_STR_METHOD_BODY);
-                AnalyzeStatement(methodBodyNode, symbolTableRoot, scopeAnalyzer);
-            }
-        }
+        }   
     }
 
     // Pop the symbol table off the stack
-    // PrintLog("Popping symbol table '%s' off stack.\n", symbolTableRoot->identifier.name.c_str());
     scopeAnalyzer.pop();
     return true;
 }
 
 // Returns whether the statement is valid or not.
-bool AnalyzeStatement(const Node* astRoot, const SymbolTable* symbolTableRoot, ScopeAnalyzer& scopeAnalyzer)
+bool AnalyzeStatement(const Node* astRoot, ScopeAnalyzer& scopeAnalyzer)
 {
     if(astRoot == nullptr)
     {
@@ -140,9 +156,7 @@ bool AnalyzeStatement(const Node* astRoot, const SymbolTable* symbolTableRoot, S
     }
     else if(
         astRoot->type == N_STR_STATEMENTS || 
-        astRoot->type == N_STR_METHOD_BODY || 
-        astRoot->type == N_STR_ELIFS ||
-        astRoot->type == N_STR_ELSE
+        astRoot->type == N_STR_METHOD_BODY
     )
     {
         bool results = true;
@@ -151,7 +165,7 @@ bool AnalyzeStatement(const Node* astRoot, const SymbolTable* symbolTableRoot, S
         {
             if(statementNode != nullptr)
             {
-                bool result = AnalyzeStatement(statementNode, symbolTableRoot, scopeAnalyzer);
+                bool result = AnalyzeStatement(statementNode, scopeAnalyzer);
                 results = results && result;
             }
         }
@@ -167,138 +181,115 @@ bool AnalyzeStatement(const Node* astRoot, const SymbolTable* symbolTableRoot, S
             return true;
         }     
 
-        const Identifier* classIdentifier = scopeAnalyzer.GetClass(astRoot->value);
+        const Identifier* classIdentifier = GetClass(astRoot, scopeAnalyzer);
         if(classIdentifier == nullptr)
         {
-            CompilerErr("^ Cannot declare variable of undefined class '%s'.\n", astRoot->value.c_str());
             return false;
         }
     }
     else if(astRoot->value == N_STR_CONDITIONAL_BRANCH)
     {
-        // Each if, elif, and else statement is a conditional branch.
-        for(auto branchNode : astRoot->children)
+        Node* conditionNode = GetLeftChild(astRoot);
+        const SymbolInfo* conditionInfo = AnalyzeExpression(conditionNode, scopeAnalyzer);
+        
+        if(conditionInfo != nullptr)
         {
-            if(branchNode != nullptr)
+            if(conditionInfo->type != T_STR_BOOLEAN)
             {
-                AnalyzeStatement(branchNode, symbolTableRoot, scopeAnalyzer); 
+                CompilerErr(conditionNode, "If condition must be of type 'boolean' (got '%s').\n", conditionInfo->type.c_str());
+                return false;
+            }  
+
+            // Loop through the rest of the branches which will be the body of 
+            // the if statement and possibly the else statement, if it exists.
+            for(int i = 1; i < astRoot->children.size(); i++)
+            {
+                Node* branchNode = GetChildAtIndex(astRoot, i);
+                if(branchNode != nullptr)
+                    AnalyzeStatement(branchNode, scopeAnalyzer);
             }
-        }
+        }        
     }
     else if(astRoot->value == N_STR_ASSIGNMENT)
     {   
         // Assumes that assignment is of the form "lhs = rhs" (which is the only form of assignment in this language).
-        Node *lhsNode = GetLeftChild(astRoot);
+        Node* lhsNode = GetLeftChild(astRoot);
         Node* rhsNode = GetRightChild(astRoot);
 
         // Get lhs symbol info.
-        const Identifier* lhsIdentifier = scopeAnalyzer.GetVariable(*GetIdentifierName(lhsNode));
-        Assert(lhsIdentifier != nullptr, "Lhs identifier is null.\n");
-
-        const SymbolInfo* lhsInfo = &lhsIdentifier->symbolinfo;
-        const SymbolInfo* rhsInfo = AnalyzeExpression(rhsNode, symbolTableRoot, scopeAnalyzer);
-        Assert(lhsInfo != nullptr, "Lhs info is null.\n");
-        Assert(rhsInfo != nullptr, "Rhs info is null.\n");
-
-        // Handle the assignment.
-        if(!IsSameType(*lhsInfo, *rhsInfo))
+        const Identifier* lhsIdentifier = GetVariable(lhsNode, scopeAnalyzer);
+        if(lhsIdentifier != nullptr)
         {
-            CompilerErr("Cannot assign variable of type '%s' to variable of type '%s'.\n", rhsInfo->type.c_str(), lhsInfo->type.c_str());
-            return false;
+            const SymbolInfo* lhsInfo = &lhsIdentifier->symbolinfo;
+            const SymbolInfo* rhsInfo = AnalyzeExpression(rhsNode, scopeAnalyzer);
+            Assert(lhsInfo != nullptr, "Lhs info is null.\n");
+            if(rhsInfo != nullptr)
+            {
+                // Handle the assignment.
+                if(!IsSameType(*lhsInfo, *rhsInfo))
+                {
+                    CompilerErr(astRoot, "Cannot assign rhs value of type '%s' to lhs variable of type '%s'.\n", rhsInfo->type.c_str(), lhsInfo->type.c_str());
+                    return false;
+                }
+            }
         }
     }
     else if(astRoot->value == N_STR_WHILE)
     {
         Node* conditionNode = GetLeftChild(astRoot);
-        const SymbolInfo* conditionInfo = AnalyzeExpression(conditionNode, symbolTableRoot, scopeAnalyzer);
+        const SymbolInfo* conditionInfo = AnalyzeExpression(conditionNode, scopeAnalyzer);
         if(conditionInfo == nullptr)
         {
-            CompilerErr("While condition is faulty.\n");
+            CompilerErr(conditionNode, "While condition is faulty.\n");
             return false;
         }
         else
         {
             if(conditionInfo->type != T_STR_BOOLEAN)
             {
-                CompilerErr("While condition must be of type 'boolean' (got '%s').\n", conditionInfo->type.c_str());
+                CompilerErr(conditionNode, "While condition must be of type 'boolean' (got '%s').\n", conditionInfo->type.c_str());
                 return false;
             }
         }
 
         // Analyze the body of the while loop.
         Node* bodyNode = GetRightChild(astRoot);
-        AnalyzeStatement(bodyNode, symbolTableRoot, scopeAnalyzer);
+        AnalyzeStatement(bodyNode, scopeAnalyzer);
     }
     else if(astRoot->value == N_STR_INDEX_ASSIGNMENT)
     {
         Node* arrNode = GetFirstChild(astRoot);
-        Node* indexNode = GetNodeChildWithName(astRoot, N_STR_INDEX);
-        Node* rhsNode = GetChildAtIndex(astRoot, 2); // TODO: Change this to more generalized func
+        Node* indexNode = GetChildAtIndex(astRoot, 1);
+        Node* rhsNode = GetChildAtIndex(astRoot, 2);
 
-        const SymbolInfo* arrInfo = AnalyzeExpression(arrNode, symbolTableRoot, scopeAnalyzer);
-        const SymbolInfo* indexInfo = AnalyzeExpression(indexNode, symbolTableRoot, scopeAnalyzer);
-        const SymbolInfo* rhsInfo = AnalyzeExpression(rhsNode, symbolTableRoot, scopeAnalyzer);
+        const SymbolInfo* arrInfo = AnalyzeExpression(arrNode, scopeAnalyzer);
+        const SymbolInfo* indexInfo = AnalyzeExpression(indexNode, scopeAnalyzer);
+        const SymbolInfo* rhsInfo = AnalyzeExpression(rhsNode, scopeAnalyzer);
 
         if(arrInfo != nullptr && indexInfo != nullptr && rhsInfo != nullptr)
         {
             if(arrInfo->type != T_STR_ARRAY)
             {
-                CompilerErr("Cannot index non-array type '%s'.\n", arrInfo->type.c_str());
+                CompilerErr(indexNode, "Cannot index non-array type '%s'.\n", arrInfo->type.c_str());
             }
             else if(indexInfo->type != T_STR_INT)
             {
-                CompilerErr("Cannot index array with non-integer type '%s'.\n", indexInfo->type.c_str());
+                CompilerErr(indexNode, "Cannot index array with non-integer type '%s'.\n", indexInfo->type.c_str());
             }
-            else if(arrInfo->type != rhsInfo->type)
+            else if(rhsInfo->type != T_STR_INT)
             {
-                CompilerErr("Cannot assign variable of type '%s' to array of type '%s'.\n", rhsInfo->type.c_str(), arrInfo->type.c_str());
+                CompilerErr(rhsNode, "Cannot assign non-integer type '%s' to array.\n", rhsInfo->type.c_str());
             }
         }
-    }
-    else if(astRoot->type == N_STR_IF || astRoot->type == N_STR_ELIF)
-    {
-        Node* conditionNode = GetLeftChild(astRoot);
-        const SymbolInfo* conditionInfo = AnalyzeExpression(conditionNode, symbolTableRoot, scopeAnalyzer);
-        Assert(conditionInfo != nullptr, "Condition info is null.\n");
-
-        if(conditionInfo->type != T_STR_BOOLEAN)
-        {
-            CompilerErr("If condition must be of type 'boolean' (got '%s').\n", conditionInfo->type.c_str());
-            return false;
-        }  
-
-        // Analyze the body of the if statement.
-        Node* bodyNode = GetRightChild(astRoot);
-        AnalyzeStatement(bodyNode, symbolTableRoot, scopeAnalyzer);
-    }
-    else if(astRoot->value == N_STR_RETURN)
-    {
-        Node* returnNode = GetFirstChild(astRoot);
-
-        const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, symbolTableRoot, scopeAnalyzer);
-        Assert(returnInfo != nullptr, "Return info is null.\n");
-
-        const SymbolInfo* methodInfo = &scopeAnalyzer.GetCurrentMethod()->symbolinfo;
-        Assert(methodInfo != nullptr, "Method info is null.\n");
-
-        if(returnInfo->type != methodInfo->type)
-        {
-            CompilerErr("Return type '%s' does not match method return type '%s'.\n", returnInfo->type.c_str(), methodInfo->type.c_str());
-            return false;
-        } 
     }
     else if(astRoot->value == N_STR_SYSTEM_PRINT)
     {
         Node* printNode = GetFirstChild(astRoot);
 
-        const SymbolInfo* printInfo = AnalyzeExpression(printNode, symbolTableRoot, scopeAnalyzer);
+        const SymbolInfo* printInfo = AnalyzeExpression(printNode, scopeAnalyzer);
         Assert(printInfo != nullptr, "Print info is null.\n");
 
         // Because the print statement can print anything, it is always valid if the print info is not null.
-    }
-    else if(astRoot->value == N_STR_EXPRESSION)
-    {
-        const SymbolInfo* expressionInfo = AnalyzeExpression(GetFirstChild(astRoot), symbolTableRoot, scopeAnalyzer);
     }
 
     return true;
@@ -306,22 +297,18 @@ bool AnalyzeStatement(const Node* astRoot, const SymbolTable* symbolTableRoot, S
 
 // An expression always resolves to a type which is returned by this function.
 // An expression can be faulty, in which case it returns nullptr.
-const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symbolTableRoot, ScopeAnalyzer& scopeAnalyzer)
+const SymbolInfo* AnalyzeExpression(const Node* astRoot, ScopeAnalyzer& scopeAnalyzer)
 {
     const SymbolInfo* returnedType = nullptr;
 
-    if(astRoot->value == N_STR_CLOSED_EXPR)
-    {
-        return AnalyzeExpression(GetFirstChild(astRoot), symbolTableRoot, scopeAnalyzer);
-    }
     if(astRoot->type == N_STR_IDENTIFIER)
     {
-        const Identifier* identifier = scopeAnalyzer.GetVariable(*GetIdentifierName(astRoot));
+        const Identifier* identifier = GetVariable(astRoot, scopeAnalyzer);
         if(identifier != nullptr)
         {
             if(astRoot->lineno < identifier->symbolinfo.lineno)
             {
-                CompilerErr("Variable '%s' is used before it is declared.\n", identifier->symbol.GetName());
+                CompilerErr(astRoot, "Variable '%s' is used before it is declared.\n", identifier->symbol.GetName());
             }
             else
             {
@@ -331,7 +318,7 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
     }
     else if(astRoot->value == N_STR_METHOD_CALL)
     {
-        const SymbolInfo* callerInfo = AnalyzeExpression(GetFirstChild(astRoot), symbolTableRoot, scopeAnalyzer);
+        const SymbolInfo* callerInfo = AnalyzeExpression(GetFirstChild(astRoot), scopeAnalyzer);
         Assert(callerInfo != nullptr, "Caller info is null.\n");
 
         const Node* methodCallNode = GetChildAtIndex(astRoot, 1);
@@ -339,11 +326,11 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
         const std::string* methodName = GetIdentifierName(methodCallNode);
         Assert(methodName != nullptr, "Method name is null.\n");
 
-        Symbol callerClass = Symbol(callerInfo->type, SymbolRecord::CLASS);
+        const std::string& className = callerInfo->type;
 
         if(scopeAnalyzer.ClassExists(callerInfo->type))
         {
-            const Identifier* methodIdentifier = scopeAnalyzer.GetClassMethod(callerClass, *methodName);
+            const Identifier* methodIdentifier = scopeAnalyzer.GetClassMethod(className, *methodName);
 
             if(methodIdentifier != nullptr)
             {
@@ -354,20 +341,20 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
                 {
                     for(auto argument : methodArguments->children)
                     {
-                        const SymbolInfo* argumentInfo = AnalyzeExpression(argument, symbolTableRoot, scopeAnalyzer);
+                        const SymbolInfo* argumentInfo = AnalyzeExpression(argument, scopeAnalyzer);
                         if(argumentInfo != nullptr)
                         {
                             argumentTypes.push_back(argumentInfo->type);
                         }
                     }
                 }
-
+                
                 uint32_t methodExpectedParams = methodIdentifier->symbolinfo.typeParameters.size();
                 uint32_t methodActualParams = argumentTypes.size();
 
                 if (methodExpectedParams != methodActualParams)
                 {
-                    CompilerErr("Method '%s' expects %d parameters, but %d were given.\n", methodName->c_str(), methodExpectedParams, methodActualParams);
+                    CompilerErr(methodCallNode, "Method '%s' expects %d parameters, but %d were given.\n", methodName->c_str(), methodExpectedParams, methodActualParams);
                 }
                 else
                 {
@@ -375,7 +362,7 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
                     {
                         if (methodIdentifier->symbolinfo.typeParameters[i] != argumentTypes[i])
                         {
-                            CompilerErr("Method '%s' expects parameter %d to be of type '%s', but got type '%s'.\n", methodName->c_str(), i, methodIdentifier->symbolinfo.typeParameters[i].c_str(), argumentTypes[i].c_str());
+                            CompilerErr(methodCallNode, "Method '%s' expects parameter %d to be of type '%s', but got type '%s'.\n", methodName->c_str(), i, methodIdentifier->symbolinfo.typeParameters[i].c_str(), argumentTypes[i].c_str());
                         }
                     }
                 }
@@ -385,39 +372,39 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
             }
             else
             {
-                CompilerErr("Method '%s' does not exist in class '%s'.\n", methodName->c_str(), callerInfo->type.c_str());
+                CompilerErr(methodCallNode, "Method '%s' does not exist in class '%s'.\n", methodName->c_str(), callerInfo->type.c_str());
             }
         }
     }
     else if(astRoot->type == N_STR_BINARY_OPERATION)
     {
-        const SymbolInfo* leftSymbol = AnalyzeExpression(GetLeftChild(astRoot), symbolTableRoot, scopeAnalyzer);
-        const SymbolInfo* rightSymbol = AnalyzeExpression(GetRightChild(astRoot), symbolTableRoot, scopeAnalyzer);
+        const SymbolInfo* leftSymbol = AnalyzeExpression(GetLeftChild(astRoot), scopeAnalyzer);
+        const SymbolInfo* rightSymbol = AnalyzeExpression(GetRightChild(astRoot), scopeAnalyzer);
 
         if(leftSymbol != nullptr && rightSymbol != nullptr)
         {
+            const std::string& operation = astRoot->value;
+
             // If the operation is a comparison, then the types of the left and right operands must be the same.
             // The type must be either int or boolean.
             if(leftSymbol->type == rightSymbol->type)
             {
-                const std::string& operation = astRoot->value;
-
-                if(OperationIsComparison(operation))
+                if(OperationIsBinLogical(operation))
                 {
-                    if(leftSymbol->type != T_STR_INT && leftSymbol->type != T_STR_BOOLEAN)
+                    if(leftSymbol->type != T_STR_BOOLEAN)
                     {
-                        CompilerErr("Cannot perform comparison on type '%s'.\n", leftSymbol->type.c_str());
+                        CompilerErr(astRoot, "Cannot perform binary logical operation '%s' on type '%s'.\n", operation.c_str(), leftSymbol->type.c_str());
                     }
                     else
                     {
                         returnedType = &tempSymbolMap[T_STR_BOOLEAN];
                     }
                 }
-                else if(OperationIsArithmetic(operation))
+                else if(OperationIsBinArithmetic(operation))
                 {
                     if(leftSymbol->type != T_STR_INT)
                     {
-                        CompilerErr("Cannot perform arithmetic on type '%s'.\n", leftSymbol->type.c_str());
+                        CompilerErr(astRoot, "Cannot perform binary arithmetic operation '%s' on type '%s'.\n", operation.c_str(), leftSymbol->type.c_str());
                     }
                     else
                     {
@@ -425,21 +412,77 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
                         returnedType = leftSymbol;
                     }
                 }
+                else if(OperationIsBinArithmeticComparison(operation))
+                {
+                    if(leftSymbol->type != T_STR_INT)
+                    {
+                        CompilerErr(astRoot, "Cannot perform binary arithmetic comparison operation '%s' on type '%s'.\n", operation.c_str(), leftSymbol->type.c_str());
+                    }
+                    else
+                    {
+                        returnedType = &tempSymbolMap[T_STR_BOOLEAN];
+                    }
+                }
+                else if(OperationIsBinEquality(operation))
+                {
+                    if(leftSymbol->type != T_STR_INT && leftSymbol->type != T_STR_BOOLEAN)
+                    {
+                        CompilerErr(astRoot, "Cannot perform binary equality operation '%s' on type '%s'.\n", operation.c_str(), leftSymbol->type.c_str());
+                    }
+                    else
+                    {
+                        returnedType = &tempSymbolMap[T_STR_BOOLEAN];
+                    }
+                }
             }
             else
             {
-                CompilerErr("Cannot perform binary operation on symbols of different types: '%s' and '%s'.\n", leftSymbol->type.c_str(), rightSymbol->type.c_str());
+                CompilerErr(astRoot, "Cannot perform binary operation '%s' on symbols of different types: '%s' and '%s'.\n", operation.c_str(), leftSymbol->type.c_str(), rightSymbol->type.c_str());
+            }
+        }
+    }
+    else if(astRoot->type == N_STR_UNARY_OPERATION)
+    {
+        const SymbolInfo* operandSymbol = AnalyzeExpression(GetFirstChild(astRoot), scopeAnalyzer);
+        if(operandSymbol != nullptr && astRoot->value == O_STR_NOT)
+        {
+            if(operandSymbol->type != T_STR_BOOLEAN)
+            {
+                CompilerErr(astRoot, "Cannot perform negation operation on type '%s'.\n", operandSymbol->type.c_str());
+            }
+            else
+            {
+                returnedType = operandSymbol;
             }
         }
     }
     else if(astRoot->value == N_STR_CLOSED_EXPR)
     {
-        auto returnedtype = AnalyzeExpression(GetFirstChild(astRoot), symbolTableRoot, scopeAnalyzer);
+        auto returnedtype = AnalyzeExpression(GetFirstChild(astRoot), scopeAnalyzer);
     }
     else if(astRoot->value == N_STR_NEW)
     {   
-        const std::string* className = GetIdentifierName(GetFirstChild(astRoot)); 
-        returnedType = &scopeAnalyzer.GetClass(*className)->symbolinfo;
+        Node* identifierNode = GetFirstChild(astRoot);
+        const Identifier* classIdentifier = GetClass(identifierNode, scopeAnalyzer);
+        if(classIdentifier != nullptr)
+        {
+            returnedType = &classIdentifier->symbolinfo;
+        }
+    }
+    else if(astRoot->value == N_STR_NEW_ARR)
+    {
+        const SymbolInfo* sizeInfo = AnalyzeExpression(GetFirstChild(astRoot), scopeAnalyzer);
+        if(sizeInfo != nullptr)
+        {
+            if(sizeInfo->type != T_STR_INT)
+            {
+                CompilerErr(astRoot, "Cannot create array of size using type '%s'. Size must be of type 'int'.\n", sizeInfo->type.c_str());
+            }
+            else
+            {
+                returnedType = &tempSymbolMap[T_STR_ARRAY];
+            }
+        }
     }
     else if(IsNodeLiteral(astRoot))
     {
@@ -454,12 +497,12 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
         Node *arrNode = GetFirstChild(astRoot);
         Node *indexNode = GetRightChild(astRoot);
 
-        const SymbolInfo *arrInfo = AnalyzeExpression(arrNode, symbolTableRoot, scopeAnalyzer);
-        const SymbolInfo *indexInfo = AnalyzeExpression(indexNode, symbolTableRoot, scopeAnalyzer);
+        const SymbolInfo *arrInfo = AnalyzeExpression(arrNode, scopeAnalyzer);
+        const SymbolInfo *indexInfo = AnalyzeExpression(indexNode, scopeAnalyzer);
 
         if (indexInfo->type != T_STR_INT)
         {
-            CompilerErr("Cannot index array with non-integer type '%s'.\n", indexInfo->type.c_str());
+            CompilerErr(indexNode, "Cannot index array with non-integer type '%s'.\n", indexInfo->type.c_str());
         }
         else
         {
@@ -470,9 +513,23 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
         {
             if (arrInfo->type != T_STR_ARRAY)
             {
-                CompilerErr("Cannot index non-array type '%s'.\n", arrInfo->type.c_str());
+                CompilerErr(indexNode, "Cannot index non-array type '%s'.\n", arrInfo->type.c_str());
             }
         }
+    }
+    else if(astRoot->value == N_STR_LENGTH)
+    {
+        const SymbolInfo* lengthInfo = AnalyzeExpression(GetFirstChild(astRoot), scopeAnalyzer);
+        Assert(lengthInfo != nullptr, "Length info is null.\n");
+
+        if(lengthInfo->type != T_STR_ARRAY)
+        {
+            CompilerErr(astRoot, "Cannot get length of non-array type '%s'.\n", lengthInfo->type.c_str());
+        }
+        else
+        {
+            returnedType = &tempSymbolMap[T_STR_INT];
+        } 
     }
 
     return returnedType;
@@ -481,5 +538,45 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, const SymbolTable* symb
 bool IsSameType(const SymbolInfo& a, const SymbolInfo& b)
 {
     return a.type == b.type;
+}
+
+const Identifier* GetVariable(const Node* identifierNode, ScopeAnalyzer& scopeAnalyzer)
+{
+    const Identifier* variableIdentifier = scopeAnalyzer.GetVariable(*GetIdentifierName(identifierNode));
+
+    if(variableIdentifier == nullptr)
+    {
+        CompilerErr(identifierNode, "Variable '%s' is undefined in current scope.\n", identifierNode->value.c_str());
+    }
+    else if (identifierNode->lineno < variableIdentifier->symbolinfo.lineno)
+    {
+        CompilerErr(identifierNode, "Variable '%s' is used before it is declared.\n", identifierNode->value.c_str());
+    }
+
+    return variableIdentifier;
+}
+
+const Identifier* GetClass(const Node* identifierNode, ScopeAnalyzer& scopeAnalyzer)
+{
+    const Identifier* classIdentifier = scopeAnalyzer.GetClass(*GetIdentifierName(identifierNode));
+
+    if(classIdentifier == nullptr)
+    {
+        CompilerErr(identifierNode, "Class '%s' is undefined in current scope.\n", identifierNode->value.c_str());
+    }
+
+    return classIdentifier;
+}
+
+const Identifier* GetMethod(const Node* identifierNode, ScopeAnalyzer& scopeAnalyzer)
+{
+    const Identifier* methodIdentifier = scopeAnalyzer.GetMethod(*GetIdentifierName(identifierNode));
+
+    if(methodIdentifier == nullptr)
+    {
+        CompilerErr(identifierNode, "Method '%s' is undefined in current scope.\n", identifierNode->value.c_str());
+    }
+
+    return methodIdentifier;
 }
 

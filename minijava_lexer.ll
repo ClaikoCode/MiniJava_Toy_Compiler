@@ -4,15 +4,17 @@
     #include "minijava_parser.tab.hh"
     #include "Node.h"
 
-    #define USE_LEX_ONLY 0
-    #define PRINT_TREE 0
-
-    #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(#token == "IDENTIFIER"){ printf("'%s' ", yytext); } } else { return yy::parser::make_##token(yytext); }
+    extern Node* rootNode;
     int lexical_errors = 0;
 
     #define YY_DECL yy::parser::symbol_type yylex()
 
-    extern Node* rootNode;
+    #define USE_LEX_ONLY 0
+    #define PRINT_TREE 0
+
+    #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(#token == "IDENTIFIER"){ printf("'%s' ", yytext); } } else { return yy::parser::make_##token(yytext); }
+    
+    
 %}
 
 %option yylineno

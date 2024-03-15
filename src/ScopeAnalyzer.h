@@ -16,14 +16,16 @@ struct ScopeAnalyzer
 
     void pop();
     void push(const Scope& scope);
-    Identifier* GetIdentifier(const Symbol& symbol);
+    Scope* GetCurrentScope();
+    Identifier* GetIdentifier(const std::string& name, SymbolRecord record);
     Identifier* GetVariable(const std::string& variableName);
     Identifier* GetMethod(const std::string& methodName);
     Identifier* GetClass(const std::string& className);
     Identifier* GetThis();
     Identifier* GetCurrentMethod();
+    
 
-    Identifier* GetClassMethod(const Symbol& classSymbol, const std::string& methodName);
+    Identifier* GetClassMethod(const std::string& className, const std::string& methodName);
 
     bool SymbolExists(const Symbol& symbol);
     bool ClassExists(const std::string& className);

@@ -54,6 +54,9 @@ SymbolTable* SymbolTable::GetChildWithName(const std::string* name) const
 
 void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
 {
+    const uint32_t parentScopeDepth = symbolTable->identifier.symbol.scopeDepth;
+    const uint32_t scopeDepth = parentScopeDepth + 1;
+
     for (auto child : root->children)
     {
         const std::string& nodeType = child->type;
@@ -63,12 +66,12 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
         {
             std::string& className = GetFirstChild(child)->value;
             
-            Identifier identifier(className, SymbolRecord::CLASS, child->lineno, className);
+            Identifier classIdentifier(className, scopeDepth, SymbolRecord::CLASS, child->lineno, className);
 
             // Add "this" to the symbol table when it is a class.
-            Identifier this_identifier(T_STR_THIS, SymbolRecord::VARIABLE, child->lineno, className);
+            Identifier this_identifier(T_STR_THIS, scopeDepth + 1, SymbolRecord::VARIABLE, child->lineno, className);
             
-            SymbolTable* newSymbolTable = symbolTable->AddSymbolTable(identifier, child);
+            SymbolTable* newSymbolTable = symbolTable->AddSymbolTable(classIdentifier, child);
             newSymbolTable->AddVariable(this_identifier);
 
             BuildSymbolTable(child, newSymbolTable);
@@ -77,7 +80,7 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
         {
             const std::string* methodName = GetMethodIdentifierName(child);
             const IdentifierDatatype* returnType = GetMethodExpectedReturnType(child);
-            Identifier identifier(*methodName, SymbolRecord::METHOD, child->lineno, *returnType);
+            Identifier methodIdentifier(*methodName, scopeDepth, SymbolRecord::METHOD, child->lineno, *returnType);
 
             Node* methodParams = GetMethodParams(child);
             if(methodParams != nullptr)
@@ -85,11 +88,11 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
                 for(auto paramVar : methodParams->children)
                 {
                     IdentifierDatatype paramType = paramVar->value;
-                    identifier.symbolinfo.typeParameters.push_back(paramType);
+                    methodIdentifier.symbolinfo.typeParameters.push_back(paramType);
                 }
             }
 
-            SymbolTable* newSymbolTable = symbolTable->AddSymbolTable(identifier, child);
+            SymbolTable* newSymbolTable = symbolTable->AddSymbolTable(methodIdentifier, child);
             BuildSymbolTable(child, newSymbolTable);
         }
         else
@@ -106,7 +109,7 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
         IdentifierDatatype varType = nodeValue;
         std::string varName = GetChildAtIndex(root, 0)->value;
 
-        Identifier varIdentifier(varName, SymbolRecord::VARIABLE, root->lineno, varType);
+        Identifier varIdentifier(varName, scopeDepth, SymbolRecord::VARIABLE, root->lineno, varType);
         symbolTable->AddVariable(varIdentifier);
     }
 }

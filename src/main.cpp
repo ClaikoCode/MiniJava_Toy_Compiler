@@ -18,7 +18,6 @@
 #endif
 
 extern int yylex();
-extern int yyparse();
 extern int lexical_errors;
 extern Node* rootNode;
 
@@ -31,6 +30,9 @@ int main(int argc, char* argv[])
     if(USE_LEX_ONLY)
     {
         yylex();
+
+        if(lexical_errors)
+            return 1;
     }
     else
     {
@@ -48,10 +50,10 @@ int main(int argc, char* argv[])
             rootNode->generate_tree();
 
             printf("Creating symbol table...\n");
-            SymbolTable* rootSymbolTable = new SymbolTable(Identifier("global", SymbolRecord::UNKNOWN, 0, NO_TYPE), rootNode, nullptr);
+            SymbolTable* rootSymbolTable = new SymbolTable(Identifier("global", (-1u), SymbolRecord::UNKNOWN, 0, NO_TYPE), rootNode, nullptr);
             BuildSymbolTable(rootNode, rootSymbolTable);
-            printf("Symbol table created.\n");
-            PrintSymbolTable(rootSymbolTable);
+            //printf("Symbol table created.\n");
+            //PrintSymbolTable(rootSymbolTable);
 
             ScopeAnalyzer scopeAnalyzer;
             printf("\n");

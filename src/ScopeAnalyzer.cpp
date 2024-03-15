@@ -3,6 +3,7 @@
 #include "ScopeAnalyzer.h"
 #include "ConsolePrinter.h"
 #include "CompilerStringDefines.h"
+#include "CompilerPrinter.h"
 
 void ScopeAnalyzer::pop()
 {   
@@ -26,7 +27,6 @@ bool ScopeAnalyzer::SymbolExists(const Symbol& symbol)
 {
     if(symbolLUT.count(symbol) == 0)
     {
-        PrintRaw("@error %s | '%s' not found in this scope.\n", BuildScopeString().c_str(), symbol.Stringfy().c_str());
         return false;
     }
 
@@ -35,15 +35,22 @@ bool ScopeAnalyzer::SymbolExists(const Symbol& symbol)
 
 bool ScopeAnalyzer::ClassExists(const std::string& className)
 {
-    Symbol classSymbol = Symbol(className, SymbolRecord::CLASS);
-    return SymbolExists(classSymbol);
+    return GetClass(className) != nullptr;
 }
 
-Identifier* ScopeAnalyzer::GetIdentifier(const Symbol& symbol)
+Identifier* ScopeAnalyzer::GetIdentifier(const std::string& name, SymbolRecord record)
 {
-    if(SymbolExists(symbol))
+    Symbol symbol = Symbol(name, -1, record);
+
+    // Start from the current scope and go up the stack
+    for(int i = scopeStack.size()-1; i >= 0; i--)
     {
-        return &symbolLUT[symbol];
+        symbol.scopeDepth = i; // Set the scope depth to the current scope
+
+        if(SymbolExists(symbol))
+        {
+            return &symbolLUT[symbol];
+        }
     }
 
     return nullptr;
@@ -51,56 +58,64 @@ Identifier* ScopeAnalyzer::GetIdentifier(const Symbol& symbol)
 
 Identifier* ScopeAnalyzer::GetVariable(const std::string& variableName)
 {
-    Symbol variableSymbol = Symbol(variableName, SymbolRecord::VARIABLE);
-    return GetIdentifier(variableSymbol);
+    return GetIdentifier(variableName, SymbolRecord::VARIABLE);
 }
 
 Identifier* ScopeAnalyzer::GetMethod(const std::string& methodName)
 {
-    Symbol methodSymbol = Symbol(methodName, SymbolRecord::METHOD);
-    return GetIdentifier(methodSymbol);
+    return GetIdentifier(methodName, SymbolRecord::METHOD);
 }
 
 Identifier* ScopeAnalyzer::GetClass(const std::string& className)
 {
-    Symbol classSymbol = Symbol(className, SymbolRecord::CLASS);
-    return GetIdentifier(classSymbol);
+    return GetIdentifier(className, SymbolRecord::CLASS);
 }
 
 Identifier* ScopeAnalyzer::GetThis()
 {
-    Symbol thisSymbol = Symbol(T_STR_THIS, SymbolRecord::VARIABLE);
-    return GetIdentifier(thisSymbol);
+    return GetVariable(T_STR_THIS);
 }
 
 Identifier* ScopeAnalyzer::GetCurrentMethod()
+{
+    Scope* scope = GetCurrentScope();
+
+    if(scope == nullptr)
+    {
+        return nullptr;
+    }
+
+    Identifier* scopeIdentifier = &scope->identifier;
+
+    // If the last identifier is a method, return it.
+    return scopeIdentifier->symbol.record == SymbolRecord::METHOD ? scopeIdentifier : nullptr;
+}
+
+Scope* ScopeAnalyzer::GetCurrentScope()
 {
     if (scopeStack.empty())
     {
         return nullptr;
     }
 
-    Identifier* lastIdentifier = &scopeStack.back().identifier;
-
-    // If the last identifier is a method, return it.
-    return lastIdentifier->symbol.record == SymbolRecord::METHOD ? lastIdentifier : nullptr;
+    return &scopeStack.back();
 }
 
-Identifier* ScopeAnalyzer::GetClassMethod(const Symbol& classSymbol, const std::string& methodName)
+Identifier* ScopeAnalyzer::GetClassMethod(const std::string& className, const std::string& methodName)
 {
-    SymbolTable& globalSymbolTable = scopeStack.front();
-
-    for(auto& scope : globalSymbolTable.children)
+    if(!scopeStack.empty())
     {
-        if (scope->identifier.symbol == classSymbol)
+        Scope &globalScope = scopeStack.front();
+        for (const Scope* child : globalScope.children)
         {
-            for(auto& method : scope->children)
+            if (child->identifier.symbol.name == className)
             {
-                Identifier& methodIdentifier = method->identifier;
-
-                if (methodIdentifier.symbol.name == methodName && methodIdentifier.symbol.record == SymbolRecord::METHOD)
+                for(Scope* method : child->children)
                 {
-                    return &methodIdentifier;
+                    if (method->identifier.symbol.name == methodName)
+                    {
+                        return &method->identifier;
+                    }
                 }
             }
         }
@@ -154,11 +169,12 @@ void ScopeAnalyzer::AddIdentifier(const Identifier& identifier)
 
     if(IsInScope(identifier))
     {
-        PrintRaw(
-                "@error Redeclaration of %s %s in scope '%s'.\n", 
+        PrintCompErr(
+                "Redeclaration of %s '%s' in scope.\n",
+                identifier.symbolinfo.lineno,
+                BuildScopeString().c_str(),
                 symbol.GetRecord(), 
-                symbol.GetName(),
-                BuildScopeString().c_str()
+                symbol.GetName()
             );
     }
 
@@ -184,20 +200,6 @@ void ScopeAnalyzer::ModifyScopeInSet(const Scope& scope, bool add)
     // Add all variables to the set
     for(const Identifier& var : scope.variables)
     {   
-        // If a variable is not a literal and is about to be added it is assumed to be a class.
-        // A check is then made to see if the class has been declared.
-        if(add && literalNodeTypes.count(var.symbolinfo.type) == 0)
-        {
-            if(!ClassExists(var.symbolinfo.type))
-            {
-                PrintRaw(
-                    "@error | Class '%s' is undefined.\n",
-                    var.symbolinfo.type.c_str()
-                );
-            }
-            
-        }
-
         add ? AddIdentifier(var) : RemoveIdentifier(var);
     }
 

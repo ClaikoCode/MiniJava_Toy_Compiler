@@ -25,8 +25,8 @@ struct Symbol{
     Symbol()
         : name("NULL SYMBOL"), record(SymbolRecord::UNKNOWN) {}
 
-    Symbol(std::string name, SymbolRecord record)
-        : name(name), record(record) {}
+    Symbol(std::string name, uint32_t scopeDepth, SymbolRecord record)
+        : name(name), scopeDepth(scopeDepth), record(record) {}
 
     bool operator==(const Symbol& other) const
     {
@@ -49,6 +49,7 @@ struct Symbol{
     }
 
     std::string name;
+    uint32_t scopeDepth;
     SymbolRecord record;
 };
 
@@ -62,8 +63,9 @@ namespace std
         {
             std::size_t h1 = std::hash<std::string>()(symbol.name);
             std::size_t h2 = std::hash<SymbolRecordType>()(static_cast<SymbolRecordType>(symbol.record));
+            std::size_t h3 = std::hash<uint32_t>()(symbol.scopeDepth);
 
-            return h1 ^ (h2 << 1);
+            return h1 ^ (h2 << 1) ^ (h3 << 1);
         }
     };
 }
@@ -94,8 +96,8 @@ struct Identifier
     Identifier() 
         : symbol(), symbolinfo() {}
 
-    Identifier(std::string name, SymbolRecord record, int lineno, IdentifierDatatype type)
-        : symbol(name, record), symbolinfo(lineno, type) {}
+    Identifier(std::string name, uint32_t scopeDepth, SymbolRecord record, int lineno, IdentifierDatatype type)
+        : symbol(name, scopeDepth, record), symbolinfo(lineno, type) {}
 
     Identifier(Symbol symbol, SymbolInfo symbolinfo)
         : symbol(symbol), symbolinfo(symbolinfo) {}
@@ -117,7 +119,7 @@ struct Identifier
 struct SymbolTable{
 
     SymbolTable(Identifier identifier, Node* astNode, SymbolTable* parent)
-        : identifier(identifier), astNode(astNode), parent(parent) {}
+        : identifier(identifier), astNode(astNode) {}
 
     void AddVariable(Identifier& identifier);
     SymbolTable* AddSymbolTable(Identifier& identifier, Node* astNode);
@@ -126,8 +128,6 @@ struct SymbolTable{
     Identifier identifier;
     Node* astNode; // The node in the AST that this symbol table represents.
 
-    // TODO: See if parent is even used.
-    SymbolTable* parent;
     std::vector<Identifier> variables;
     std::vector<SymbolTable*> children;
 };
