@@ -1,7 +1,7 @@
 #include <unordered_set>
 #include <algorithm> // std::reverse
 
-#include "StatementAnalyzer.h"
+#include "SemanticAnalyzer.h"
 #include "ConsolePrinter.h"
 #include "CompilerStringDefines.h"
 #include "NodeHelperFunctions.h"

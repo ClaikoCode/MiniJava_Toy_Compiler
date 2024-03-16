@@ -5,7 +5,7 @@
 #include "SymbolTable.h"
 #include "ScopeAnalyzer.h"
 #include "minijava_parser.tab.hh"
-#include "StatementAnalyzer.h"
+#include "SemanticAnalyzer.h"
 
 #ifndef USE_LEX_ONLY
     #define USE_LEX_ONLY 0
