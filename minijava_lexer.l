@@ -1,11 +1,12 @@
 %{
     #include <stdio.h>
+    #include <iostream>
     #include <assert.h>
     #include "minijava_parser.tab.h"
     #include "Node.h"
 
     #define USE_LEX_ONLY 0
-    #define PRINT_TREE 0
+    #define PRINT_TREE 1
 
     #define REGISTER_TOKEN(token) if(USE_LEX_ONLY) { printf("%s ", #token); if(#token == "IDENTIFIER"){ printf("'%s' ", yytext); } } else { return yy::parser::make_##token(yytext); }
     int lexical_errors = 0;
@@ -85,6 +86,23 @@ ALPHANUM_PTRN [a-zA-Z0-9_]
 
 int main(int argc, char* argv[])
 {
+    if(argc < 2)
+    {
+        fprintf(stderr, "ERROR: Must have input file. Usage: ./compiler test_file_path\n");
+        return 1;
+    }
+
+    // Open input file
+    const char* file_path = argv[1];
+    FILE* file = fopen(file_path, "r");
+    if(file == NULL)
+    {
+        fprintf(stderr, "ERROR: File '%s' not found.\n", file_path);
+        return 1;
+    }
+    // Set input file for parsing/lexing
+    yyin = file;
+
     if(USE_LEX_ONLY)
     {
         yylex();
@@ -95,7 +113,7 @@ int main(int argc, char* argv[])
         bool parseSuccess = !parser.parse();        
 
         if(lexical_errors)
-            return 1;
+            goto CLEANUP;
         
         if(parseSuccess)
         {
@@ -105,10 +123,14 @@ int main(int argc, char* argv[])
                 rootNode->print_tree();
             }
            
-            printf("\nGenerating tree:\n");
+            printf("\nGenerating tree...\n");
             rootNode->generate_tree();
         }
     }
 
+    fclose(file);
     return 0;
+CLEANUP:
+    fclose(file);
+    return 1;
 }

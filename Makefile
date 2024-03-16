@@ -11,10 +11,9 @@ FLEX_OUT = $(patsubst %.l, $(SRCDIR)/%.yy.c, $(FLEX_FILE))
 PARSER_OUT = $(patsubst %.y, $(SRCDIR)/%.tab.c, $(PARSE_FILE))
 PARSER_HEADER = $(patsubst %.c, %.h, $(PARSER_OUT))
 
-PROGRAM_OUT = $(ODIR)/compiler
+PROGRAM_OUT = ./compiler
 
 TEST_FOLDER = ./test_files
-TEST_FILE = ./experiments/testText3.java
 TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
 TEST_FILE = $(TEST_FOLDER)/valid/LinearSearch.java
 TEST_FILE = $(TEST_FOLDER)/tree_validation/OperatorPriority.java
@@ -30,7 +29,7 @@ scanner:
 	flex -o $(FLEX_OUT) $(FLEX_FILE)
 
 run: compiler
-	./$(PROGRAM_OUT) < $(TEST_FILE)
+	./$(PROGRAM_OUT) $(TEST_FILE)
 
 clean:
 	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
