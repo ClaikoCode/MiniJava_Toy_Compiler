@@ -14,32 +14,32 @@ class MyClass {
     int[] z;
     MyClass xyz;
 
-    public int xyFunc() {
-        return y; // @error - semantic (invalid return type)
+    public int xyFunc() {// @error - semantic (invalid return type)
+        return y;
     }
 
-    public int xzFunc() {
-        return z; // @error - semantic (invalid return type)
+    public int xzFunc() {// @error - semantic (invalid return type)
+        return z;
     }
 
-    public boolean yxFunc() {
-        return x; // @error - semantic ('yxFunc' and its return are of different types)
+    public boolean yxFunc() {// @error - semantic ('yxFunc' and its return are of different types)
+        return x;
     }
 
-    public boolean yzFunc() { 
-        return this.zxFunc(); // @error - semantic (invalid return type)
+    public boolean yzFunc() { // @error - semantic (invalid return type)
+        return this.zxFunc();
     }
 
-    public int[] zxFunc() { 
-        return x; // @error - semantic (invalid return type)
+    public int[] zxFunc() { // @error - semantic (invalid return type)
+        return x;
     }
 
-    public int[] zyFunc() { 
-        return this.yxFunc(); // @error - semantic (invalid return type)
+    public int[] zyFunc() { // @error - semantic (invalid return type)
+        return this.yxFunc();
     }
 
-    public int swFunc() { 
-        return z[this.yzFunc()]; // @error - semantic (invalid return type)
+    public int swFunc() { // @error - semantic (invalid return type)
+        return z[this.yzFunc()];
     }
 
 }

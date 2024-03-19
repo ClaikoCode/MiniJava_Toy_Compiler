@@ -19,7 +19,7 @@ def colored(text, color):
 
 def run_compiler(file_path):
     myinput = open(file_path, 'r')
-    process = subprocess.Popen(['./bin/compiler'], stdin=myinput, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = subprocess.Popen(['./compiler', file_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = process.communicate(timeout=10)
     return stdout.decode(), stderr.decode()
 
