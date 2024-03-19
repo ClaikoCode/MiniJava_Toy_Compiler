@@ -1,5 +1,6 @@
 %{
     #include <stdio.h>
+    #include <iostream>
     #include <assert.h>
     #include "minijava_parser.tab.hh"
     #include "Node.h"
@@ -84,3 +85,54 @@ ALPHANUM_PTRN [a-zA-Z0-9_]
 <<EOF>>                                     { return yy::parser::make_END(); }
 
 %%
+
+int main(int argc, char* argv[])
+{
+    if(argc < 2)
+    {
+        fprintf(stderr, "ERROR: Must have input file. Usage: ./compiler test_file_path\n");
+        return 1;
+    }
+
+    // Open input file
+    const char* file_path = argv[1];
+    FILE* file = fopen(file_path, "r");
+    if(file == NULL)
+    {
+        fprintf(stderr, "ERROR: File '%s' not found.\n", file_path);
+        return 1;
+    }
+    // Set input file for parsing/lexing
+    yyin = file;
+
+    if(USE_LEX_ONLY)
+    {
+        yylex();
+    }
+    else
+    {
+        yy::parser parser;
+        bool parseSuccess = !parser.parse();        
+
+        if(lexical_errors)
+            goto CLEANUP;
+        
+        if(parseSuccess)
+        {
+            if (PRINT_TREE)
+            {
+                printf("Printing tree:\n");
+                rootNode->print_tree();
+            }
+           
+            printf("\nGenerating tree...\n");
+            rootNode->generate_tree();
+        }
+    }
+
+    fclose(file);
+    return 0;
+CLEANUP:
+    fclose(file);
+    return 1;
+}

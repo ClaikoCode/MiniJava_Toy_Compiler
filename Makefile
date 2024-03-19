@@ -12,10 +12,9 @@ PARSER_OUT = $(patsubst %.yy, $(SRCDIR)/%.tab.cc, $(PARSE_FILE))
 PARSER_HEADER = $(patsubst %.cc, %.hh, $(PARSER_OUT))
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 
-PROGRAM_OUT = $(ODIR)/compiler
+PROGRAM_OUT = ./compiler
 
 TEST_FOLDER = ./test_files
-TEST_FILE = ./experiments/testText3.java
 TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
 TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
 TEST_FILE = $(TEST_FOLDER)/valid/SemanticMethodCallInBooleanExpression.java
@@ -37,7 +36,7 @@ $(FLEX_OUT): $(PARSER_OUT) $(FLEX_FILE)
 	flex -o $@ $(FLEX_FILE)
 
 run: compiler
-	./$(PROGRAM_OUT) < $(TEST_FILE)
+	./$(PROGRAM_OUT) $(TEST_FILE)
 
 clean:
 	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
