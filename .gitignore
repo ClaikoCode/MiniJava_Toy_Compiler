@@ -1,11 +1,12 @@
 ### General Project Files ###
 
+.vscode
+
 experiments/
 
 src/*.yy.*
 src/*.tab.*
 bin/*
-compiler
 
 tree.dot
 tree.pdf
@@ -52,7 +53,7 @@ tree.pdf
 *.app
 
 ### VisualStudioCode ###
-.vscode/
+.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
