@@ -2,6 +2,7 @@
 %require "3.2"
 
 %code requires{
+    #include <cassert>
     #include <stdio.h>
     #include <iostream>
     #include "Node.h"
@@ -19,13 +20,13 @@
     #define ACT_ADD_CHILD(parent, child) if(parent != nullptr && child != nullptr) parent->children.push_back(child)
     #define ACT_REGISTER_NODE(target, type, value) target = ACT_NEW_NODE(type, value)
     #define ACT_REGISTER_IF_NULL(target, node, type, value) if(node == nullptr) { ACT_REGISTER_NODE(target, type, value); node = target; }
-    #define ACT_COPY_LINENO(dest, source) { dest.lineno = source.lineno; }
+    #define ACT_COPY_LINENO(dest, source) { dest->lineno = source->lineno; }
 }
 
 %define parse.error verbose
 
-%define api.value.type variant
 %define api.token.constructor
+%define api.value.type variant
 
 %token <std::string> T_INT "Integer type" T_BOOLEAN "Boolean type" T_ARR "Array type" T_VOID "Void type" T_STRING "String type"
 %token <std::string> IDENTIFIER "Identifier" INTEGER "Integer literal" BOOLEAN "Boolean literal" STRING "String literal"
@@ -56,7 +57,6 @@
 %right NEW
 %left LENGTH LB DOT  
 
-
 %%
 root    : goal { rootNode = $1; };
 
@@ -68,14 +68,14 @@ main_class  : PUBLIC CLASS identifier
                 LCB 
                     statement_batch_1P
                 RCB 
-              RCB { ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); };
+              RCB { ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); ACT_COPY_LINENO($$, $3); ACT_COPY_LINENO($$, $3); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); };
 
 
 class_decl_batch    : /* empty */ { $$ = nullptr; }
                     | class_decl_batch class_declaration { ACT_REGISTER_IF_NULL($$, $1, N_STR_CLASS_DECLS, ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
                     ;
 
-class_declaration   : CLASS identifier LCB var_decl_batch method_decl_batch RCB { ACT_REGISTER_NODE($$, N_STR_CLASS_DECL, ""); ACT_ADD_CHILD($$, $2); ACT_ADD_CHILD($$, $4); ACT_ADD_CHILD($$, $5); };
+class_declaration   : CLASS identifier LCB var_decl_batch method_decl_batch RCB { ACT_REGISTER_NODE($$, N_STR_CLASS_DECL, ""); ACT_COPY_LINENO($$, $2); ACT_ADD_CHILD($$, $2); ACT_ADD_CHILD($$, $4); ACT_ADD_CHILD($$, $5); };
 
 method_decl_batch   : /* empty */ { $$ = nullptr; }
                     | method_decl_batch method_declaration { ACT_REGISTER_IF_NULL($$, $1, N_STR_METHOD_DECLS, ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
@@ -84,6 +84,7 @@ method_decl_batch   : /* empty */ { $$ = nullptr; }
 method_declaration  : PUBLIC type identifier LP var_list RP 
                         LCB method_body return_statement RCB { 
                                 ACT_REGISTER_NODE($$, N_STR_METHOD_DECL, $2);
+                                ACT_COPY_LINENO($$, $3); // copy line number from identifier into method declaration
                                 ACT_ADD_CHILD($$, $3);
                                 ACT_ADD_CHILD($$, $5);
                                 ACT_ADD_CHILD($$, $8);
@@ -113,12 +114,12 @@ type        : T_ARR { $$ = T_STR_ARRAY; }
             ;
 
 statement   : LCB statement_batch_0P RCB { $$ = $2; }
-            | WHILE LP expression RP statement { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_WHILE); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
+            | WHILE LP expression RP statement { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_WHILE); ACT_COPY_LINENO($$, $3); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); }
             | SYS_PRINT LP expression RP SEMI_COLON { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_SYSTEM_PRINT); ACT_ADD_CHILD($$, $3); }
             | identifier EQU expression SEMI_COLON { ACT_REGISTER_NODE($$,  N_STR_STATEMENT, N_STR_ASSIGNMENT); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
             | identifier LB expression RB EQU expression SEMI_COLON { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_INDEX_ASSIGNMENT); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $6); }
-            | IF LP expression RP statement %prec "then" { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_CONDITIONAL_BRANCH); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); } 
-            | IF LP expression RP statement ELSE statement { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_CONDITIONAL_BRANCH); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); ACT_ADD_CHILD($$, $7); }
+            | IF LP expression RP statement %prec "then" { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_CONDITIONAL_BRANCH); ACT_COPY_LINENO($$, $3); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); } 
+            | IF LP expression RP statement ELSE statement { ACT_REGISTER_NODE($$, N_STR_STATEMENT, N_STR_CONDITIONAL_BRANCH); ACT_COPY_LINENO($$, $3); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $5); ACT_ADD_CHILD($$, $7); }
             ;
 
 // 0P = 0+ -> 0 or more
@@ -180,7 +181,7 @@ arg_list    : /* empty */ { $$ = nullptr; }
             ;
 
 filled_arg_list : expression { ACT_REGISTER_NODE($$, N_STR_ARGUMENT_LIST, ""); ACT_ADD_CHILD($$, $1); }
-                | expression COMMA filled_arg_list { $$ = $3; ACT_ADD_CHILD($$, $1); }
+                | filled_arg_list COMMA expression { $$ = $1; ACT_ADD_CHILD($$, $3); }
                 ;
 
 identifier : IDENTIFIER { ACT_REGISTER_NODE($$, N_STR_IDENTIFIER, $1); };
