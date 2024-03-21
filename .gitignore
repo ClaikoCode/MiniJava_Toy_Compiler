@@ -1,11 +1,16 @@
 ### General Project Files ###
 
+.vscode
+
 experiments/
+compiler
 
 src/*.yy.*
 src/*.tab.*
 bin/*
-compiler
+
+tree.dot
+tree.pdf
 
 # Any folder that contains should be tracked. 
 # Which files inside it to track should be clear in the above statements.
@@ -49,7 +54,7 @@ compiler
 *.app
 
 ### VisualStudioCode ###
-.vscode/
+.vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
