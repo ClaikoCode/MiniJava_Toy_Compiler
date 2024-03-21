@@ -37,7 +37,7 @@ $(FLEX_OUT): $(PARSER_OUT) $(FLEX_FILE)
 	flex -o $@ $(FLEX_FILE)
 
 run: compiler
-	./$(PROGRAM_OUT) $(TEST_FILE)
+	$(PROGRAM_OUT) $(TEST_FILE)
 
 clean:
 	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
