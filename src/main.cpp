@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <iostream>
 
 #include "Node.h"
 #include "SymbolTable.h"
@@ -18,6 +19,7 @@
 #endif
 
 extern int yylex();
+extern FILE* yyin;
 extern int lexical_errors;
 extern Node* rootNode;
 
@@ -27,20 +29,46 @@ int main(int argc, char* argv[])
         yydebug = 1;
     #endif
 
+    if(argc < 2)
+    {
+        fprintf(stderr, "ERROR: Must have input file. Usage: ./compiler test_file_path\n");
+        return 1;
+    }
+
+    yy::parser parser;
+
+    // Open input file
+    const char* file_path = argv[1];
+    FILE* file = fopen(file_path, "r");
+    if(file == NULL)
+    {
+        fprintf(stderr, "ERROR: File '%s' not found.\n", file_path);
+        return 1;
+    }
+    // Set input file for parsing/lexing
+    yyin = file;
+
+    int returnVal = 0;
+
     if(USE_LEX_ONLY)
     {
         yylex();
 
         if(lexical_errors)
-            return 1;
+        {
+            returnVal = 1;
+            goto CLEANUP;
+        }  
     }
     else
     {
-        yy::parser parser;
         bool parseSuccess = !parser.parse();      
 
         if(lexical_errors)
-            return 1;
+        {
+            returnVal = 1;
+            goto CLEANUP;
+        }
         
         if(parseSuccess)
         {
@@ -63,9 +91,13 @@ int main(int argc, char* argv[])
         else
         {
             printf("Parse failed. No semantic analysis will be performed.\n");
-            return 1;
+            returnVal = 1;
+            goto CLEANUP;
         }
     }
 
-    return 0;
+    
+CLEANUP:
+    fclose(file);
+    return returnVal;
 }

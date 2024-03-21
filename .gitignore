@@ -3,6 +3,7 @@
 .vscode
 
 experiments/
+compiler
 
 src/*.yy.*
 src/*.tab.*

@@ -12,7 +12,7 @@ PARSER_OUT = $(patsubst %.yy, $(SRCDIR)/%.tab.cc, $(PARSE_FILE))
 PARSER_HEADER = $(patsubst %.cc, %.hh, $(PARSER_OUT))
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 
-PROGRAM_OUT = $(ODIR)/compiler
+PROGRAM_OUT = ./compiler
 
 TEST_FOLDER = ./test_files
 TEST_FILE = ./experiments/testText3.java
@@ -37,7 +37,7 @@ $(FLEX_OUT): $(PARSER_OUT) $(FLEX_FILE)
 	flex -o $@ $(FLEX_FILE)
 
 run: compiler
-	./$(PROGRAM_OUT) < $(TEST_FILE)
+	./$(PROGRAM_OUT) $(TEST_FILE)
 
 clean:
 	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
@@ -45,16 +45,16 @@ clean:
 tree: tree.dot
 	dot -Tpdf tree.dot -o tree.pdf
 
-lexical_test: compiler
+lexical_test: all
 	python3 ./testScript.py -lexical
 
-syntax_test: compiler
+syntax_test: all
 	python3 ./testScript.py -syntax
 
-semantic_test: compiler
+semantic_test: all
 	python3 ./testScript.py -semantic
 
-valid_test: compiler
+valid_test: all
 	python3 ./testScript.py -valid
 
 test_all: compiler lexical_test syntax_test semantic_test valid_test
