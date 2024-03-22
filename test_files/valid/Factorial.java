@@ -12,6 +12,18 @@ class Fac {
 	    num_aux = 1 ;
 	else 
 	    num_aux = num * (this.ComputeFac(num-1)) ;
+
+	if(num > 1)
+	{
+		num = num * 2;
+		while(num_aux > 1)
+		{
+			num_aux = num_aux - 1;
+			num = num - 1;
+		}
+	}
+
+	num_aux = num_aux + num;
 	return num_aux ;
     }
 

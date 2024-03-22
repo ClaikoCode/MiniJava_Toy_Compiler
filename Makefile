@@ -17,16 +17,16 @@ PROGRAM_OUT = ./compiler
 TEST_FOLDER = ./test_files
 TEST_FILE = ./experiments/testText3.java
 TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
-TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
 TEST_FILE = $(TEST_FOLDER)/valid/SemanticMethodCallInBooleanExpression.java
 TEST_FILE = $(TEST_FOLDER)/semantic_errors/InvalidNestedMethodCalls.java
+TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
 
 all: $(PROGRAM_OUT)
+	cp $(TEST_FILE) $(ODIR)/inputfile.java
 
 # Compile the program
 $(PROGRAM_OUT): $(FLEX_OUT) $(PARSER_OUT) $(SRC) $(LIBS)
 	$(CC) $(CFLAGS) -o $@ $^
-	cp $(TEST_FILE) $(ODIR)/inputfile.java
 
 # Compile the parser
 $(PARSER_OUT): $(PARSE_FILE)
@@ -36,14 +36,19 @@ $(PARSER_OUT): $(PARSE_FILE)
 $(FLEX_OUT): $(PARSER_OUT) $(FLEX_FILE) 
 	flex -o $@ $(FLEX_FILE)
 
-run: compiler
-	$(PROGRAM_OUT) $(TEST_FILE)
+run: all
+	$(PROGRAM_OUT) $(ODIR)/inputfile.java
+	$(MAKE) tree
+	$(MAKE) CFG
 
 clean:
 	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
 
 tree: tree.dot
 	dot -Tpdf tree.dot -o tree.pdf
+
+CFG: CFG.dot
+	dot -Tpdf CFG.dot -o CFG.pdf
 
 lexical_test: all
 	python3 ./testScript.py -lexical

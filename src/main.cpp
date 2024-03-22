@@ -8,14 +8,18 @@
 #include "minijava_parser.tab.hh"
 #include "SemanticAnalyzer.h"
 
+#include "ControlFlowGraph.h"
+#include "ControlFlowGraphVisualizer.h"
+#include "NodeHelperFunctions.h"
+
 #ifndef USE_LEX_ONLY
-    #define USE_LEX_ONLY 0
+#define USE_LEX_ONLY 0
 #endif
 
 #if YYDEBUG
-   int yydebug;
+int yydebug;
 #else
-    static int yydebug = 0;
+static int yydebug = 0;
 #endif
 
 extern int yylex();
@@ -25,11 +29,11 @@ extern Node* rootNode;
 
 int main(int argc, char* argv[])
 {
-    #if YYDEBUG
-        yydebug = 1;
-    #endif
+#if YYDEBUG
+    yydebug = 1;
+#endif
 
-    if(argc < 2)
+    if (argc < 2)
     {
         fprintf(stderr, "ERROR: Must have input file. Usage: ./compiler test_file_path\n");
         return 1;
@@ -40,7 +44,7 @@ int main(int argc, char* argv[])
     // Open input file
     const char* file_path = argv[1];
     FILE* file = fopen(file_path, "r");
-    if(file == NULL)
+    if (file == NULL)
     {
         fprintf(stderr, "ERROR: File '%s' not found.\n", file_path);
         return 1;
@@ -48,45 +52,83 @@ int main(int argc, char* argv[])
     // Set input file for parsing/lexing
     yyin = file;
 
+    // Return value for main
     int returnVal = 0;
 
-    if(USE_LEX_ONLY)
+    if (USE_LEX_ONLY)
     {
         yylex();
 
-        if(lexical_errors)
-        {
-            returnVal = 1;
-            goto CLEANUP;
-        }  
-    }
-    else
-    {
-        bool parseSuccess = !parser.parse();      
-
-        if(lexical_errors)
+        if (lexical_errors)
         {
             returnVal = 1;
             goto CLEANUP;
         }
-        
-        if(parseSuccess)
+    }
+    else
+    {
+        bool parseSuccess = !parser.parse();
+
+        if (lexical_errors)
+        {
+            returnVal = 1;
+            goto CLEANUP;
+        }
+
+        if (parseSuccess)
         {
             //printf("Printing tree:\n");
             //rootNode->print_tree();
             printf("\nGenerating tree...");
             rootNode->generate_tree();
+            printf("Tree generated.\n");
 
             printf("Creating symbol table...\n");
             SymbolTable* rootSymbolTable = new SymbolTable(Identifier("global", (-1u), SymbolRecord::UNKNOWN, 0, NO_TYPE), rootNode, nullptr);
             BuildSymbolTable(rootNode, rootSymbolTable);
-            //printf("Symbol table created.\n");
+            printf("Symbol table created.\n");
             //PrintSymbolTable(rootSymbolTable);
 
             ScopeAnalyzer scopeAnalyzer;
             printf("\n");
-            AnalyzeStructure(rootNode, rootSymbolTable, scopeAnalyzer);
-            printf("\n");
+            bool validStructure = AnalyzeStructure(rootNode, rootSymbolTable, scopeAnalyzer);
+
+            if (validStructure)
+            {
+                std::vector<ControlFlowNode> controlFlowNodes;
+
+                for (SymbolTable* classTable : rootSymbolTable->children)
+                {
+                    for (SymbolTable* methodTable : classTable->children)
+                    {
+                        ControlFlowNode blockNode;
+
+                        Node* methodDeclarationNode = methodTable->astNode;
+                        Node* methodBodyNode = GetNodeChildWithName(methodDeclarationNode, "Method Body");
+
+                        ControlFlowNode* entryNode = &blockNode;
+                        for (Node* statementNode : methodBodyNode->children)
+                        {
+                            if (statementNode->type == "Statement")
+                            {
+                                entryNode = GetGenIRStatementFunc(statementNode)(statementNode, entryNode);
+                            }
+                        }
+
+                        controlFlowNodes.push_back(blockNode);
+                    }
+                }
+
+                printf("\nGenerating CFG dot file...\n");
+                GenerateDot(&controlFlowNodes[0], "CFG.dot");
+                printf("CFG dot file generated.\n");
+            }
+            else
+            {
+                printf("Semantic analysis failed. No control flow graph will be generated.\n");
+                returnVal = 1;
+                goto CLEANUP;
+            }
         }
         else
         {
@@ -96,8 +138,9 @@ int main(int argc, char* argv[])
         }
     }
 
-    
+
 CLEANUP:
     fclose(file);
+    printf("Exiting...\n\n");
     return returnVal;
 }
