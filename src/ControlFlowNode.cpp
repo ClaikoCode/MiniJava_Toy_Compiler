@@ -57,3 +57,18 @@ void ControlFlowNode::TACAssignIndexed(std::string arrName, std::string index, s
 {
     block.Add(TAC(arrName, index, "[]=", value));
 }
+
+void ControlFlowNode::TACParam(std::string param)
+{
+    block.Add(TAC(param, "", "param", ""));
+}
+
+void ControlFlowNode::TACIffalse(std::string arg1, std::string label)
+{
+    block.Add(TAC("", label, "iffalse", arg1));
+}
+
+void ControlFlowNode::TACReturn(std::string result)
+{
+    block.Add(TAC("", "", "return", result));
+}

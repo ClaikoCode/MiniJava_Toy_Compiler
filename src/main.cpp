@@ -115,12 +115,15 @@ int main(int argc, char* argv[])
                             }
                         }
 
+                        // Add return statement
+                        Node* returnExpressionNode = GetReturnNode(methodDeclarationNode);
+                        entryNode->TACReturn(GenIRExpression(returnExpressionNode, &blockNode));
                         controlFlowNodes.push_back(blockNode);
                     }
                 }
 
                 printf("\nGenerating CFG dot file...\n");
-                GenerateDot(&controlFlowNodes[0], "CFG.dot");
+                GenerateDot(controlFlowNodes, "CFG.dot");
                 printf("CFG dot file generated.\n");
             }
             else

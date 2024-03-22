@@ -6,9 +6,13 @@
 #include "CompilerStringDefines.h"
 #include "Node.h"
 
+#define GenIRStatement(root, blockNode) GetGenIRStatementFunc(root)(root, blockNode)
+#define GenIRExpression(root, blockNode) GetGenIRExpressionFunc(root)(root, blockNode)
+
 std::string GenIRBinaryOp(Node* root, ControlFlowNode* blockNode);
 std::string GenIRUnaryOp(Node* root, ControlFlowNode* blockNode);
 std::string GenIRLiteral(Node* root, ControlFlowNode* blockNode);
+std::string GenIRThis(Node* root, ControlFlowNode* blockNode);
 std::string GenIRIdentifier(Node* root, ControlFlowNode* blockNode);
 std::string GenIRNewArray(Node* root, ControlFlowNode* blockNode);
 std::string GenIRNew(Node* root, ControlFlowNode* blockNode);

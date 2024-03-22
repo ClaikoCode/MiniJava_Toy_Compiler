@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "ControlFlowGraph.h"
 
-void GenerateDot(ControlFlowNode* root, const std::string& filename);
+void GenerateDot(std::vector<ControlFlowNode>& nodes, const std::string& filename);

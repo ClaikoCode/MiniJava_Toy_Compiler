@@ -13,6 +13,7 @@ std::unordered_map<std::string, GenIRExpression> GenIRExpressionMap = {
     {T_STR_INT, GenIRLiteral},
     {T_STR_STRING, GenIRLiteral},
     {T_STR_ARRAY, GenIRLiteral},
+    {T_STR_THIS, GenIRThis},
     {N_STR_IDENTIFIER, GenIRIdentifier},
     {N_STR_NEW_ARR, GenIRNewArray},
     {N_STR_NEW, GenIRNew},
@@ -50,8 +51,7 @@ GenIRStatement GetGenIRStatementFunc(Node* root)
     return GenIRStatementMap[root->value];
 }
 
-#define GenIRStatement(root, blockNode) GetGenIRStatementFunc(root)(root, blockNode)
-#define GenIRExpression(root, blockNode) GetGenIRExpressionFunc(root)(root, blockNode)
+
 
 
 // ----- EXPRESSION GENERATION FUNCTIONS START HERE ----- 
@@ -140,12 +140,43 @@ std::string GenIRArrayIndex(Node* root, ControlFlowNode* blockNode)
 
 std::string GenIRMethodCall(Node* root, ControlFlowNode* blockNode)
 {
-    return "[METHOD CALL RESULT]";
+    Node* callerNode = GetFirstChild(root);
+    std::string caller_label = GenIRExpression(callerNode, blockNode);
+
+    Node* methodNode = GetChildAtIndex(root, 1);
+    const std::string* method_name = GetIdentifierName(methodNode);
+
+    Node* argsNode = GetChildAtIndex(root, 2);
+    std::vector<std::string> arg_labels;
+    if (argsNode != nullptr)
+    {
+        // Generate the IR for the arguments.
+        for (auto& arg : argsNode->children)
+        {
+            arg_labels.push_back(GenIRExpression(arg, blockNode));
+        }
+
+        // Generate the IR for the method call.
+        for (auto& arg : arg_labels)
+        {
+            blockNode->TACParam(arg);
+        }
+    }
+
+    std::string label = blockNode->block.GenerateLabel();
+    blockNode->TACMethodCall(label, *method_name, std::to_string(arg_labels.size()));
+
+    return label;
 }
 
 std::string GenIRLiteral(Node* root, ControlFlowNode* blockNode)
 {
     return root->value;
+}
+
+std::string GenIRThis(Node* root, ControlFlowNode* blockNode)
+{
+    return "this";
 }
 
 std::string GenIRIdentifier(Node* root, ControlFlowNode* blockNode)
@@ -198,7 +229,7 @@ ControlFlowNode* GenIRArrIndexAssignment(Node* root, ControlFlowNode* blockNode)
 ControlFlowNode* GenIRIfStatement(Node* root, ControlFlowNode* blockNode)
 {
     Node* conditionNode = GetFirstChild(root);
-    GenIRExpression(conditionNode, blockNode);
+    std::string conditionLabel = GenIRExpression(conditionNode, blockNode);
 
     ControlFlowNode* trueNode = new ControlFlowNode();
     blockNode->trueExit = trueNode;
@@ -217,11 +248,13 @@ ControlFlowNode* GenIRIfStatement(Node* root, ControlFlowNode* blockNode)
     {
         falseNode = GenIRStatement(falseBranchNode, falseNode);
         falseNode->trueExit = joinNode;
+        blockNode->TACIffalse(conditionLabel, falseNode->block.label);
     }
     else
     {
         delete falseNode;
         blockNode->falseExit = joinNode;
+        blockNode->TACIffalse(conditionLabel, joinNode->block.label);
     }
 
     return joinNode;
@@ -232,7 +265,7 @@ ControlFlowNode* GenIRWhileLoop(Node* root, ControlFlowNode* blockNode)
     ControlFlowNode* conditionNode = new ControlFlowNode();
 
     Node* conditionExprNode = GetLeftChild(root);
-    GenIRExpression(conditionExprNode, conditionNode);
+    std::string conditionLabel = GenIRExpression(conditionExprNode, conditionNode);
 
     ControlFlowNode* bodyNode = new ControlFlowNode();
     conditionNode->trueExit = bodyNode;
@@ -245,6 +278,8 @@ ControlFlowNode* GenIRWhileLoop(Node* root, ControlFlowNode* blockNode)
     bodyNode->trueExit = conditionNode;
 
     blockNode->trueExit = conditionNode;
+
+    conditionNode->TACIffalse(conditionLabel, joinNode->block.label);
 
     return joinNode;
 }

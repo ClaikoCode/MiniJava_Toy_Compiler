@@ -17,6 +17,7 @@ struct ControlFlowNode
 
     void TACExpression(std::string result, std::string arg1, std::string op, std::string arg2);
     void TACMethodCall(std::string result, std::string methodName, std::string N);
+    void TACParam(std::string param);
     void TACJump(std::string label);
     void TACLength(std::string result, std::string arg1);
     void TACNew(std::string result, std::string arg1);
@@ -24,6 +25,8 @@ struct ControlFlowNode
     void TACArrIndex(std::string result, std::string arrName, std::string index);
     void TACAssign(std::string result, std::string arg1);
     void TACAssignIndexed(std::string arrName, std::string index, std::string value);
+    void TACIffalse(std::string arg1, std::string label);
+    void TACReturn(std::string result);
 
     // The block for this node.
     ControlFlowBlock block;

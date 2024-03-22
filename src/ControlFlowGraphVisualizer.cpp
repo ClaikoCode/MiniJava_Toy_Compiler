@@ -4,7 +4,14 @@
 
 #include "ControlFlowGraphVisualizer.h"
 
-void GenerateDot(ControlFlowNode* root, const std::string& filename)
+#define AddExitToFile(file, node, exit, logicalVal) \
+    if (node->exit) \
+    { \
+        dfs(node->exit); \
+        file << "    \"" << node->block.label << "\" -> \"" << node->exit->block.label << "\" [xlabel=\"" << logicalVal << "\"];\n"; \
+    }
+
+void GenerateDot(std::vector<ControlFlowNode>& nodes, const std::string& filename)
 {
     std::ofstream file(filename);
     std::unordered_set<ControlFlowNode*> visited;
@@ -30,21 +37,23 @@ void GenerateDot(ControlFlowNode* root, const std::string& filename)
             file << "\"];\n";
 
             // Create an edge for the true exit
-            if (node->trueExit)
-            {
-                dfs(node->trueExit);
-                file << "    \"" << node->block.label << "\" -> \"" << node->trueExit->block.label << "\" [xlabel=\"True\"];\n";
-            }
+            AddExitToFile(file, node, trueExit, "True");
 
             // Create an edge for the false exit
-            if (node->falseExit)
-            {
-                dfs(node->falseExit);
-                file << "    \"" << node->block.label << "\" -> \"" << node->falseExit->block.label << "\" [xlabel=\"False\"];\n";
-            }
+            AddExitToFile(file, node, falseExit, "False");
         };
 
-    dfs(root);
+
+    int clusterCount = 0;
+    for (ControlFlowNode& root : nodes)
+    {
+        // Try to make clear separation between different methods
+        file << "    subgraph cluster_" << clusterCount++ << " {\n";
+        file << "        label=\" Method_" << clusterCount << "\";\n";
+        dfs(&root);
+        file << "    }\n";
+    }
+
 
     file << "}\n";
     file.close();
