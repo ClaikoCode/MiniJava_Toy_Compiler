@@ -4,11 +4,11 @@ LIBS = -ll
 CFLAGS = -g -w -std=c++14
 CC = g++
 
-FLEX_FILE = minijava_lexer.ll
-PARSE_FILE = minijava_parser.yy
+FLEX_FILE = $(SRCDIR)/minijava_lexer.ll
+PARSE_FILE = $(SRCDIR)/minijava_parser.yy
 
-FLEX_OUT = $(patsubst %.ll, $(SRCDIR)/%.yy.c, $(FLEX_FILE))
-PARSER_OUT = $(patsubst %.yy, $(SRCDIR)/%.tab.cc, $(PARSE_FILE))
+FLEX_OUT = $(patsubst %.ll, %.yy.c, $(FLEX_FILE))
+PARSER_OUT = $(patsubst %.yy, %.tab.cc, $(PARSE_FILE))
 PARSER_HEADER = $(patsubst %.cc, %.hh, $(PARSER_OUT))
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 
@@ -25,8 +25,8 @@ all: $(PROGRAM_OUT)
 	cp $(TEST_FILE) $(ODIR)/inputfile.java
 
 # Compile the program
-$(PROGRAM_OUT): $(FLEX_OUT) $(PARSER_OUT) $(SRC) $(LIBS)
-	$(CC) $(CFLAGS) -o $@ $^
+$(PROGRAM_OUT): $(FLEX_OUT) $(PARSER_OUT) $(SRC)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 # Compile the parser
 $(PARSER_OUT): $(PARSE_FILE)
@@ -42,7 +42,7 @@ run: all
 	$(MAKE) CFG
 
 clean:
-	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
+	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf CFG.dot CFG.pdf
 
 tree: tree.dot
 	dot -Tpdf tree.dot -o tree.pdf

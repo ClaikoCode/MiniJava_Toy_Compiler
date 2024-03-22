@@ -235,15 +235,14 @@ ControlFlowNode* GenIRWhileLoop(Node* root, ControlFlowNode* blockNode)
     GenIRExpression(conditionExprNode, conditionNode);
 
     ControlFlowNode* bodyNode = new ControlFlowNode();
-    bodyNode->trueExit = conditionNode;
+    conditionNode->trueExit = bodyNode;
 
     ControlFlowNode* joinNode = new ControlFlowNode();
+    conditionNode->falseExit = joinNode;
 
     Node* bodyNodeRoot = GetRightChild(root);
     bodyNode = GenIRStatement(bodyNodeRoot, bodyNode);
-
-    conditionNode->trueExit = bodyNode;
-    conditionNode->falseExit = joinNode;
+    bodyNode->trueExit = conditionNode;
 
     blockNode->trueExit = conditionNode;
 

@@ -25,7 +25,7 @@ void GenerateDot(ControlFlowNode* root, const std::string& filename)
             file << "    \"" << node->block.label << "\" [label=\"" << node->block.label << "\n";
             for (const auto& tac : node->block.instructions)
             {
-                file << tac.result << " := " << tac.arg1 << " " << tac.op << " " << tac.arg2 << "\\l";
+                file << tac.result << " := " << tac.arg1 << " " << tac.op << " " << tac.arg2 << "\\n";
             }
             file << "\"];\n";
 
