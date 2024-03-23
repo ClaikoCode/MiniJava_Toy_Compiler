@@ -52,8 +52,6 @@ GenIRStatement GetGenIRStatementFunc(Node* root)
 }
 
 
-
-
 // ----- EXPRESSION GENERATION FUNCTIONS START HERE ----- 
 
 
@@ -148,6 +146,7 @@ std::string GenIRMethodCall(Node* root, ControlFlowNode* blockNode)
 
     Node* argsNode = GetChildAtIndex(root, 2);
     std::vector<std::string> arg_labels;
+    arg_labels.push_back(caller_label); // Add the caller as the first argument.
     if (argsNode != nullptr)
     {
         // Generate the IR for the arguments.
@@ -155,12 +154,12 @@ std::string GenIRMethodCall(Node* root, ControlFlowNode* blockNode)
         {
             arg_labels.push_back(GenIRExpression(arg, blockNode));
         }
+    }
 
-        // Generate the IR for the method call.
-        for (auto& arg : arg_labels)
-        {
-            blockNode->TACParam(arg);
-        }
+    // Generate the IR for all the arguments.
+    for (auto& arg : arg_labels)
+    {
+        blockNode->TACParam(arg);
     }
 
     std::string label = blockNode->block.GenerateLabel();
@@ -229,7 +228,7 @@ ControlFlowNode* GenIRArrIndexAssignment(Node* root, ControlFlowNode* blockNode)
 ControlFlowNode* GenIRIfStatement(Node* root, ControlFlowNode* blockNode)
 {
     Node* conditionNode = GetFirstChild(root);
-    std::string conditionLabel = GenIRExpression(conditionNode, blockNode);
+    GenIRExpression(conditionNode, blockNode);
 
     ControlFlowNode* trueNode = new ControlFlowNode();
     blockNode->trueExit = trueNode;
@@ -248,13 +247,11 @@ ControlFlowNode* GenIRIfStatement(Node* root, ControlFlowNode* blockNode)
     {
         falseNode = GenIRStatement(falseBranchNode, falseNode);
         falseNode->trueExit = joinNode;
-        blockNode->TACIffalse(conditionLabel, falseNode->block.label);
     }
     else
     {
         delete falseNode;
         blockNode->falseExit = joinNode;
-        blockNode->TACIffalse(conditionLabel, joinNode->block.label);
     }
 
     return joinNode;
@@ -265,7 +262,7 @@ ControlFlowNode* GenIRWhileLoop(Node* root, ControlFlowNode* blockNode)
     ControlFlowNode* conditionNode = new ControlFlowNode();
 
     Node* conditionExprNode = GetLeftChild(root);
-    std::string conditionLabel = GenIRExpression(conditionExprNode, conditionNode);
+    GenIRExpression(conditionExprNode, conditionNode);
 
     ControlFlowNode* bodyNode = new ControlFlowNode();
     conditionNode->trueExit = bodyNode;
@@ -278,8 +275,6 @@ ControlFlowNode* GenIRWhileLoop(Node* root, ControlFlowNode* blockNode)
     bodyNode->trueExit = conditionNode;
 
     blockNode->trueExit = conditionNode;
-
-    conditionNode->TACIffalse(conditionLabel, joinNode->block.label);
 
     return joinNode;
 }

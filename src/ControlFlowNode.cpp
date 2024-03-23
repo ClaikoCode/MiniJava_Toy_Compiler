@@ -65,7 +65,7 @@ void ControlFlowNode::TACParam(std::string param)
 
 void ControlFlowNode::TACIffalse(std::string arg1, std::string label)
 {
-    block.Add(TAC("", label, "iffalse", arg1));
+    block.Add(TAC(label, "", "iffalse", arg1));
 }
 
 void ControlFlowNode::TACReturn(std::string result)

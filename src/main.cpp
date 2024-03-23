@@ -7,10 +7,10 @@
 #include "ScopeAnalyzer.h"
 #include "minijava_parser.tab.hh"
 #include "SemanticAnalyzer.h"
+#include "NodeHelperFunctions.h"
 
 #include "ControlFlowGraph.h"
-#include "ControlFlowGraphVisualizer.h"
-#include "NodeHelperFunctions.h"
+#include "ControlFlowGraphHandler.h"
 
 #ifndef USE_LEX_ONLY
 #define USE_LEX_ONLY 0
@@ -95,36 +95,10 @@ int main(int argc, char* argv[])
 
             if (validStructure)
             {
-                std::vector<ControlFlowNode> controlFlowNodes;
-
-                for (SymbolTable* classTable : rootSymbolTable->children)
-                {
-                    for (SymbolTable* methodTable : classTable->children)
-                    {
-                        ControlFlowNode blockNode;
-
-                        Node* methodDeclarationNode = methodTable->astNode;
-                        Node* methodBodyNode = GetNodeChildWithName(methodDeclarationNode, "Method Body");
-
-                        ControlFlowNode* entryNode = &blockNode;
-                        for (Node* statementNode : methodBodyNode->children)
-                        {
-                            if (statementNode->type == "Statement")
-                            {
-                                entryNode = GetGenIRStatementFunc(statementNode)(statementNode, entryNode);
-                            }
-                        }
-
-                        // Add return statement
-                        Node* returnExpressionNode = GetReturnNode(methodDeclarationNode);
-                        entryNode->TACReturn(GenIRExpression(returnExpressionNode, &blockNode));
-                        controlFlowNodes.push_back(blockNode);
-                    }
-                }
-
-                printf("\nGenerating CFG dot file...\n");
-                GenerateDot(controlFlowNodes, "CFG.dot");
-                printf("CFG dot file generated.\n");
+                CFGHandler cfgHandler;
+                cfgHandler.InitCFG(rootSymbolTable);
+                cfgHandler.ConstructCFG(rootSymbolTable);
+                cfgHandler.GenerateDOT("CFG.dot");
             }
             else
             {

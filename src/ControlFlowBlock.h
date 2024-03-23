@@ -28,7 +28,7 @@ struct ControlFlowBlock
         : label("")
     {
         static int blockCount = 0;
-        label = "Block " + std::to_string(blockCount++);
+        label = "Block_" + std::to_string(blockCount++);
     }
 
     void dump();
