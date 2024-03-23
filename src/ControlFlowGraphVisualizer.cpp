@@ -32,7 +32,7 @@ void GenerateDot(std::vector<ControlFlowNode>& nodes, const std::string& filenam
             file << "    \"" << node->block.label << "\" [label=\"" << node->block.label << "\n";
             for (const auto& tac : node->block.instructions)
             {
-                file << tac.result << " := " << tac.arg1 << " " << tac.op << " " << tac.arg2 << "\\n";
+                file << tac->result << " := " << tac->arg1 << " " << tac->op << " " << tac->arg2 << "\\n";
             }
             file << "\"];\n";
 

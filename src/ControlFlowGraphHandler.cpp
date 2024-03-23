@@ -29,7 +29,8 @@ void CFGHandler::ConstructCFG(SymbolTable* rootST)
 
             // Add return statement to the last node
             Node* returnExpressionNode = GetReturnNode(methodDeclarationNode);
-            currentCFGNode->TACReturn(GenIRExpression(returnExpressionNode, &entryPoint.entryCFGNode));
+            std::string returnExpression = GenIRExpression(returnExpressionNode, currentCFGNode);
+            currentCFGNode->Add(new TACReturn(returnExpression));
         }
     }
 }
