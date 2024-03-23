@@ -6,6 +6,10 @@
 
 struct EntryPoint
 {
+    EntryPoint() {}
+    EntryPoint(ControlFlowNode entryCFGNode, Node* methodDeclarationNode)
+        : entryCFGNode(entryCFGNode), methodDeclarationNode(methodDeclarationNode) {}
+
     ControlFlowNode entryCFGNode;
     Node* methodDeclarationNode;
 };

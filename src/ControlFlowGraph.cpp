@@ -284,7 +284,7 @@ ControlFlowNode* GenIRSystemPrint(Node* root, ControlFlowNode* blockNode)
     Node* childNode = GetFirstChild(root);
     std::string child_label = GenIRExpression(childNode, blockNode);
 
-    TAC tac("", "", "print", child_label);
+    TAC tac("", "", "sysprint", child_label);
     blockNode->block.Add(tac);
 
     return blockNode;

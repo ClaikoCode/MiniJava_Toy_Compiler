@@ -20,7 +20,7 @@ void CFGHandler::ConstructCFG(SymbolTable* rootST)
             {
                 for (Node* statement : methodBodyNode->children)
                 {
-                    if(statement->type == N_STR_STATEMENT)
+                    if (statement->type == N_STR_STATEMENT)
                     {
                         currentCFGNode = GenIRStatement(statement, currentCFGNode);
                     }
@@ -42,10 +42,9 @@ void CFGHandler::InitCFG(SymbolTable* rootST)
 
         for (SymbolTable* methodTable : classTable->children)
         {
-            EntryPoint entryPoint;
-
-            Node* methodDeclarationNode = methodTable->astNode;
-            entryPoint.methodDeclarationNode = methodDeclarationNode;
+            ControlFlowBlock entryBlock(methodTable->identifier.symbol.name);
+            ControlFlowNode entryNode(entryBlock);
+            EntryPoint entryPoint(entryNode, methodTable->astNode);
 
             classMethodEntrypoints[className].push_back(std::move(entryPoint));
         }
