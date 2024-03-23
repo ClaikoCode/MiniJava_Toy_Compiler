@@ -99,6 +99,7 @@ int main(int argc, char* argv[])
                 cfgHandler.InitCFG(rootSymbolTable);
                 cfgHandler.ConstructCFG(rootSymbolTable);
                 cfgHandler.GenerateDOT("CFG.dot");
+                cfgHandler.GenerateBytecode("bytecode.txt");
             }
             else
             {

@@ -1,3 +1,7 @@
+#include <functional>
+#include <unordered_set>
+#include <vector>
+
 #include "ControlFlowGraphHandler.h"
 #include "NodeHelperFunctions.h"
 #include "CompilerStringDefines.h"
@@ -68,4 +72,58 @@ void CFGHandler::GenerateDOT(const std::string& filename)
     GenerateDot(entryPoints, filename);
 
     printf("CFG dot file generated.\n");
+}
+
+void CFGHandler::GenerateBytecode(const std::string& filename)
+{
+    printf("\nGenerating bytecode file...\n");
+
+    // Holds all the bytecode instructions for the program after generation.
+    std::vector<std::string> bytecodeInstructions;
+
+    // Recursive lambda function to generate bytecode for all nodes in the CFG.
+    std::function<void(ControlFlowNode*, std::unordered_set<ControlFlowNode*>&)> GenerateBytecodeRecursive = [&]
+    (ControlFlowNode* node, std::unordered_set<ControlFlowNode*>& visitedNodes)
+        {
+            if (visitedNodes.find(node) != visitedNodes.end())
+            {
+                return;
+            }
+
+            visitedNodes.insert(node);
+            node->GenerateBytecode(bytecodeInstructions);
+
+            if (node->trueExit)
+            {
+                GenerateBytecodeRecursive(node->trueExit, visitedNodes);
+            }
+            if (node->falseExit)
+            {
+                GenerateBytecodeRecursive(node->falseExit, visitedNodes);
+            }
+        };
+
+
+
+    for (auto& classMethodEntry : classMethodEntrypoints)
+    {
+        for (EntryPoint& entryPoint : classMethodEntry.second)
+        {
+            const std::string& className = classMethodEntry.first;
+            const std::string& methodName = entryPoint.entryCFGNode.block.label;
+            bytecodeInstructions.push_back(className + "." + methodName);
+
+            // Generate bytecode for all nodes in the CFG.
+            // Keep track of visited nodes to avoid infinite recursion.
+            std::unordered_set<ControlFlowNode*> visitedNodes;
+            GenerateBytecodeRecursive(&entryPoint.entryCFGNode, visitedNodes);
+        }
+    }
+
+    for (const std::string& instruction : bytecodeInstructions)
+    {
+        printf("%s\n", instruction.c_str());
+    }
+
+    printf("Bytecode file generated.\n");
 }

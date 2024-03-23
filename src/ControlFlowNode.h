@@ -17,6 +17,9 @@ struct ControlFlowNode
 
     // Add a TAC instruction to the block of this node.
     void Add(TAC* tac);
+
+    // Generate bytecode instructions for this node.
+    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions);
     
     // The block for this node.
     ControlFlowBlock block;

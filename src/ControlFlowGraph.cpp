@@ -80,7 +80,7 @@ std::string GenIRUnaryOp(Node* root, ControlFlowNode* blockNode)
     std::string op = root->value;
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACExpression(label, child_label, op, ""));
+    blockNode->Add(new TACExpression(label, "", op, child_label));
 
     return label;
 }
