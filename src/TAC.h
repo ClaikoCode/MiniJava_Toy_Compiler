@@ -3,8 +3,7 @@
 #include <string>
 #include <vector>
 
-std::string GenerateUncondJumpInstruction(const std::string& label);
-std::string GenerateCondJumpInstruction(const std::string& label);
+#include "BytecodeContainer.h"
 
 struct TAC
 {
@@ -12,7 +11,7 @@ struct TAC
         : result(result), arg1(arg1), op(op), arg2(arg2)
     {}
 
-    virtual void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) = 0;
+    virtual void GenerateBytecode(BytecodeContainer& bytecodeInstructions) = 0;
     void dump();
 
     std::string result;
@@ -27,7 +26,7 @@ struct TACExpression : public TAC
         : TAC(result, arg1, op, arg2)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACMethodCall : public TAC
@@ -36,7 +35,7 @@ struct TACMethodCall : public TAC
         : TAC(result, methodName, "call", N)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACParam : public TAC
@@ -45,7 +44,7 @@ struct TACParam : public TAC
         : TAC(param, "", "param", "")
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACJump : public TAC
@@ -54,7 +53,7 @@ struct TACJump : public TAC
         : TAC(label, "", "jump", "")
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACLength : public TAC
@@ -63,7 +62,7 @@ struct TACLength : public TAC
         : TAC(result, "", "length", arg1)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACNew : public TAC
@@ -72,7 +71,7 @@ struct TACNew : public TAC
         : TAC(result, "", "new", arg1)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACNewArr : public TAC
@@ -81,7 +80,7 @@ struct TACNewArr : public TAC
         : TAC(result, arrName, "newArr", N)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACArrIndex : public TAC
@@ -90,7 +89,7 @@ struct TACArrIndex : public TAC
         : TAC(result, arrName, "[]", index)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACAssign : public TAC
@@ -99,7 +98,7 @@ struct TACAssign : public TAC
         : TAC(result, arg1, "", "")
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACAssignIndexed : public TAC
@@ -108,7 +107,7 @@ struct TACAssignIndexed : public TAC
         : TAC(arrName, index, "[]=", value)
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACReturn : public TAC
@@ -117,7 +116,7 @@ struct TACReturn : public TAC
         : TAC(result, "", "return", "")
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 struct TACSystemPrint : public TAC
@@ -126,7 +125,16 @@ struct TACSystemPrint : public TAC
         : TAC(arg1, "", "system.print", "")
     {}
 
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions) override;
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
+};
+
+struct TACStop : public TAC
+{
+    TACStop()
+        : TAC("", "", "stop", "")
+    {}
+
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
 

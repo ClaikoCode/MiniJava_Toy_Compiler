@@ -18,9 +18,9 @@ void ControlFlowNode::Add(TAC* tac)
     block.Add(tac);
 }
 
-void ControlFlowNode::GenerateBytecode(std::vector<std::string>& bytecodeInstructions)
+void ControlFlowNode::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
-    bytecodeInstructions.push_back(block.label + ":");
+    bytecodeInstructions.AddBlock(block.label);
 
     for (TAC* tac : block.instructions)
     {
@@ -29,12 +29,10 @@ void ControlFlowNode::GenerateBytecode(std::vector<std::string>& bytecodeInstruc
 
     if (trueExit && !falseExit)
     {
-        std::string jumpInstruction = GenerateUncondJumpInstruction(trueExit->block.label);
-        bytecodeInstructions.push_back(jumpInstruction);
+        bytecodeInstructions.AddUncondJumpInstruction(trueExit->block.label);
     }
     else if (trueExit && falseExit)
     {
-        std::string condJumpInstruction = GenerateCondJumpInstruction(falseExit->block.label);
-        bytecodeInstructions.push_back(condJumpInstruction);
+        bytecodeInstructions.AddCondJumpInstruction(falseExit->block.label);
     }
 }

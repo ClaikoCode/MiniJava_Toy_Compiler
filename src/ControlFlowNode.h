@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ControlFlowBlock.h"
+#include "BytecodeContainer.h"
 
 struct ControlFlowNode
 {
@@ -19,7 +20,7 @@ struct ControlFlowNode
     void Add(TAC* tac);
 
     // Generate bytecode instructions for this node.
-    void GenerateBytecode(std::vector<std::string>& bytecodeInstructions);
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions);
     
     // The block for this node.
     ControlFlowBlock block;

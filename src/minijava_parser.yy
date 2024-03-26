@@ -68,7 +68,20 @@ main_class  : PUBLIC CLASS identifier
                 LCB 
                     statement_batch_1P
                 RCB 
-              RCB { ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); ACT_COPY_LINENO($$, $3); ACT_COPY_LINENO($$, $3); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); };
+              RCB { 
+                ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); 
+                ACT_COPY_LINENO($$, $3);
+                ACT_ADD_CHILD($$, $3);
+                Node* mainMethod = ACT_NEW_NODE(N_STR_METHOD_DECL, $7);
+                ACT_ADD_CHILD(mainMethod, ACT_NEW_NODE(N_STR_IDENTIFIER, $8));
+                ACT_ADD_CHILD(mainMethod, ACT_NEW_NODE(N_STR_RETURN, ""));
+
+                Node* mainMethodBody = ACT_NEW_NODE(N_STR_METHOD_BODY, "");
+                ACT_ADD_CHILD(mainMethodBody, $16);
+                ACT_ADD_CHILD(mainMethod, mainMethodBody);
+
+                ACT_ADD_CHILD($$, mainMethod);
+            };
 
 
 class_decl_batch    : /* empty */ { $$ = nullptr; }

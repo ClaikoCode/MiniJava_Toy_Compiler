@@ -24,7 +24,8 @@ void CFGHandler::ConstructCFG(SymbolTable* rootST)
             {
                 for (Node* statement : methodBodyNode->children)
                 {
-                    if (statement->type == N_STR_STATEMENT)
+                    // Skip variable declarations as these are not instructions.
+                    if (statement->type != N_STR_VARIABLE)
                     {
                         currentCFGNode = GenIRStatement(statement, currentCFGNode);
                     }
@@ -32,9 +33,16 @@ void CFGHandler::ConstructCFG(SymbolTable* rootST)
             }
 
             // Add return statement to the last node
-            Node* returnExpressionNode = GetReturnNode(methodDeclarationNode);
-            std::string returnExpression = GenIRExpression(returnExpressionNode, currentCFGNode);
-            currentCFGNode->Add(new TACReturn(returnExpression));
+            if (entryPoint.entryCFGNode.block.label != "main")
+            {
+                Node* returnExpressionNode = GetReturnNode(methodDeclarationNode);
+                std::string returnExpression = GenIRExpression(returnExpressionNode, currentCFGNode);
+                currentCFGNode->Add(new TACReturn(returnExpression));
+            }
+            else
+            {
+                currentCFGNode->Add(new TACStop());
+            }
         }
     }
 }
@@ -79,7 +87,7 @@ void CFGHandler::GenerateBytecode(const std::string& filename)
     printf("\nGenerating bytecode file...\n");
 
     // Holds all the bytecode instructions for the program after generation.
-    std::vector<std::string> bytecodeInstructions;
+    BytecodeContainer bytecodeInstructions;
 
     // Recursive lambda function to generate bytecode for all nodes in the CFG.
     std::function<void(ControlFlowNode*, std::unordered_set<ControlFlowNode*>&)> GenerateBytecodeRecursive = [&]
@@ -111,7 +119,7 @@ void CFGHandler::GenerateBytecode(const std::string& filename)
         {
             const std::string& className = classMethodEntry.first;
             const std::string& methodName = entryPoint.entryCFGNode.block.label;
-            bytecodeInstructions.push_back(className + "." + methodName);
+            bytecodeInstructions.AddMethod(className, methodName);
 
             // Generate bytecode for all nodes in the CFG.
             // Keep track of visited nodes to avoid infinite recursion.
@@ -120,10 +128,11 @@ void CFGHandler::GenerateBytecode(const std::string& filename)
         }
     }
 
-    for (const std::string& instruction : bytecodeInstructions)
-    {
-        printf("%s\n", instruction.c_str());
-    }
+    // TODO:
+    // Remember to handle the main function and also "stop" for program end.
+    // Make sure to check that labels are loaded correctly on returns as this is not handled.
+    bytecodeInstructions.Print();
+
 
     printf("Bytecode file generated.\n");
 }

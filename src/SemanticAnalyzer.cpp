@@ -88,7 +88,7 @@ bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, S
         }
     }
     // Loop through all method declarations and analyze them
-    else if (astRoot->type == N_STR_CLASS_DECL)
+    else if (astRoot->type == N_STR_CLASS_DECL || astRoot->type == N_STR_MAIN_CLASS)
     {
         Node* variableDeclarations = GetNodeChildWithName(astRoot, N_STR_VARIABLE_DECLS);
         if (variableDeclarations != nullptr)
@@ -107,49 +107,41 @@ bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, S
             validStructure = validStructure && result;
         }
     }
-    else if (astRoot->type == N_STR_MAIN_CLASS)
-    {
-        // Main class is just a set of statements, so analyze them.
-        for (auto statementNode : astRoot->children)
-        {
-            bool result = AnalyzeStatement(statementNode, scopeAnalyzer);
-            validStructure = validStructure && result;
-        }
-    }
     else if (astRoot->type == N_STR_METHOD_DECL)
     {
         const Identifier* methodIdentifier = scopeAnalyzer.GetCurrentMethod();
-        const Node* returnNode = GetReturnNode(astRoot);
+
 
         // If the method identifier is null, then the method is faulty.
-        if (methodIdentifier != nullptr && returnNode != nullptr)
+        // If the return node is null and the method is not void, then the method is faulty.
+        if (methodIdentifier != nullptr)
         {
             // Analyze the method body
             Node* methodBodyNode = GetNodeChildWithName(astRoot, N_STR_METHOD_BODY);
             bool result = AnalyzeStatement(methodBodyNode, scopeAnalyzer);
             validStructure = validStructure && result;
 
-
-            // TODO: This part with analyzing the return statement feels out of place.
-            //       It should idealy be hanled by the AnalyzeStatement function.
-
-            // Analyze the return statement
-            const IdentifierDatatype& expectedReturnType = methodIdentifier->symbolinfo.type;
-            const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, scopeAnalyzer);
-
-            if (returnInfo != nullptr)
+            // Analyze the return statement if the method is not main (main does not have a return statement).
+            if (methodIdentifier->symbol.name != "main")
             {
-                if (returnInfo->type != expectedReturnType)
-                {
-                    CompilerErr(
-                        returnNode,
-                        "Method '%s' has incorrect return type (expected '%s', got '%s').\n",
-                        methodIdentifier->symbol.GetName(),
-                        expectedReturnType.c_str(),
-                        returnInfo->type.c_str()
-                    );
+                const IdentifierDatatype& expectedReturnType = methodIdentifier->symbolinfo.type;
+                const Node* returnNode = GetReturnNode(astRoot);
+                const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, scopeAnalyzer);
 
-                    validStructure = false;
+                if (returnInfo != nullptr)
+                {
+                    if (returnInfo->type != expectedReturnType)
+                    {
+                        CompilerErr(
+                            returnNode,
+                            "Method '%s' has incorrect return type (expected '%s', got '%s').\n",
+                            methodIdentifier->symbol.GetName(),
+                            expectedReturnType.c_str(),
+                            returnInfo->type.c_str()
+                        );
+
+                        validStructure = false;
+                    }
                 }
             }
         }
