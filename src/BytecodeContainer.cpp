@@ -1,7 +1,9 @@
 #include "BytecodeContainer.h"
 #include "CompilerStringDefines.h"
+#include "ConsolePrinter.h"
 
 #include <unordered_map>
+#include <fstream>
 
 // Constexpr strings for bytecode instructions.
 constexpr char ILOAD[] = "iload ";
@@ -25,6 +27,12 @@ static std::unordered_map<std::string, std::string> operatorToInstructionOp = {
     {O_STR_OR, "ior "},
     {O_STR_LT, "ilt "}
 };
+
+// Strings for formatting standardization
+constexpr char SPACE[] = " ";
+constexpr char COLON[] = ":";
+constexpr char DOT[] = ".";
+constexpr char INDENT[] = "\t";
 
 void BytecodeContainer::AddUncondJumpInstruction(const std::string& label)
 {
@@ -123,24 +131,41 @@ std::string& BytecodeContainer::at(size_t index)
 
 void BytecodeContainer::AddMethod(const std::string& className, const std::string& methodName)
 {
-    methodIndecies.insert(bytecodeInstructions.size());
-    AddAny(className + "." + methodName);
+    std::string method = className + DOT + methodName + COLON;
+    AddAny(method);
 }
 
 void BytecodeContainer::AddBlock(const std::string& label)
 {
-    blockIndecies.insert(bytecodeInstructions.size());
     AddAny(label + ":");
 }
 
-
-void BytecodeContainer::Print()
+bool StrContains(const std::string& str, const std::string& substr)
 {
+    return str.find(substr) != std::string::npos;
+}
+
+void BytecodeContainer::WriteToFile(const std::string& filename)
+{
+    printf("\nGenerating bytecode file...\n");
+
+    std::ofstream file(filename);
+    if (!file.is_open())
+    {
+        PrintError("Failed to open bytecode file for writing.");
+        return;
+    }
+
     int indent = 0;
     for (int i = 0; i < bytecodeInstructions.size(); i++)
     {
-        bool isMethod = methodIndecies.find(i) != methodIndecies.end();
-        bool isBlock = blockIndecies.find(i) != blockIndecies.end();
+        const std::string& instruction = bytecodeInstructions[i];
+
+        bool hasColon = StrContains(instruction, COLON);
+        bool hasDot = StrContains(instruction, DOT);
+
+        bool isMethod = hasColon && hasDot;
+        bool isBlock = hasColon && !hasDot;
 
         if (isMethod)
         {
@@ -149,10 +174,10 @@ void BytecodeContainer::Print()
 
         for (int j = 0; j < indent; j++)
         {
-            printf("    ");
+            file << INDENT;
         }
 
-        printf("%s\n", bytecodeInstructions[i].c_str());
+        file << bytecodeInstructions[i] << std::endl;
 
         // If we encounter a block or method, increase the indent.
         if (isBlock || isMethod)
@@ -165,4 +190,29 @@ void BytecodeContainer::Print()
             indent--;
         }
     }
+
+    printf("Bytecode file generated.\n");
+}
+
+void BytecodeContainer::ReadFromFile(const std::string& filename)
+{
+    printf("\nReading bytecode file...\n");
+
+    std::ifstream file(filename);
+    if (!file.is_open())
+    {
+        PrintError("Failed to open bytecode file for reading.");
+        return;
+    }
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        // Remove all indentation.
+        line.erase(0, line.find_first_not_of(INDENT));
+
+        bytecodeInstructions.push_back(line);
+    }
+
+    printf("Bytecode file read.\n");
 }

@@ -84,8 +84,6 @@ void CFGHandler::GenerateDOT(const std::string& filename)
 
 void CFGHandler::GenerateBytecode(const std::string& filename)
 {
-    printf("\nGenerating bytecode file...\n");
-
     // Holds all the bytecode instructions for the program after generation.
     BytecodeContainer bytecodeInstructions;
 
@@ -111,8 +109,6 @@ void CFGHandler::GenerateBytecode(const std::string& filename)
             }
         };
 
-
-
     for (auto& classMethodEntry : classMethodEntrypoints)
     {
         for (EntryPoint& entryPoint : classMethodEntry.second)
@@ -128,11 +124,5 @@ void CFGHandler::GenerateBytecode(const std::string& filename)
         }
     }
 
-    // TODO:
-    // Remember to handle the main function and also "stop" for program end.
-    // Make sure to check that labels are loaded correctly on returns as this is not handled.
-    bytecodeInstructions.Print();
-
-
-    printf("Bytecode file generated.\n");
+    bytecodeInstructions.WriteToFile(filename);
 }

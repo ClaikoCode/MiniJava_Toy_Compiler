@@ -20,7 +20,7 @@ TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
 TEST_FILE = $(TEST_FOLDER)/valid/SemanticMethodCallInBooleanExpression.java
 TEST_FILE = $(TEST_FOLDER)/semantic_errors/InvalidNestedMethodCalls.java
 TEST_FILE = $(TEST_FOLDER)/valid/QuickSort.java
-TEST_FILE = $(TEST_FOLDER)/assignment3_valid/B.java
+TEST_FILE = $(TEST_FOLDER)/assignment3_valid/C2.java
 
 all: $(PROGRAM_OUT)
 	cp $(TEST_FILE) $(ODIR)/inputfile.java

@@ -2,7 +2,8 @@
 
 #include <vector>
 #include <string>
-#include <unordered_set>
+#include <unordered_map>
+
 
 struct BytecodeContainer
 {
@@ -22,14 +23,13 @@ struct BytecodeContainer
     void AddUncondJumpInstruction(const std::string& label);
     void AddCondJumpInstruction(const std::string& label);
 
-    // Prints all the bytecode instructions to the console.
-    void Print();
+    // Write the bytecode instructions to a file.
+    void WriteToFile(const std::string& filename);
+    void ReadFromFile(const std::string& filename);
 
     size_t size();
     std::string& at(size_t index);
 
 private:
-    std::unordered_set<size_t> methodIndecies;
-    std::unordered_set<size_t> blockIndecies;
     std::vector<std::string> bytecodeInstructions;
 };
