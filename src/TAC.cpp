@@ -17,7 +17,7 @@ void TACExpression::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
         bytecodeInstructions.AddSymbol(arg1);
     }
 
-    bytecodeInstructions.AddSymbol(arg2).AddStore(result);
+    bytecodeInstructions.AddSymbol(arg2).AddOperator(op).AddStore(result);
 }
 
 void TACMethodCall::GenerateBytecode(BytecodeContainer& bytecodeInstructions)

@@ -11,6 +11,7 @@
 
 #include "ControlFlowGraph.h"
 #include "ControlFlowGraphHandler.h"
+#include "BytecodeInterpreter.h"
 
 #ifndef USE_LEX_ONLY
 #define USE_LEX_ONLY 0
@@ -99,7 +100,21 @@ int main(int argc, char* argv[])
                 cfgHandler.InitCFG(rootSymbolTable);
                 cfgHandler.ConstructCFG(rootSymbolTable);
                 cfgHandler.GenerateDOT("CFG.dot");
-                cfgHandler.GenerateBytecode("bytecode.txt");
+
+                BytecodeContainer bytecodeInstructions;
+                cfgHandler.GenerateBytecode(bytecodeInstructions);
+                bool writeSuccess = bytecodeInstructions.WriteToFile("bytecode.txt");
+
+                if (!writeSuccess)
+                {
+                    printf("Failed to generate bytecode file.\n");
+                    returnVal = 1;
+                    goto CLEANUP;
+                }
+
+                BytecodeInterpreter interpreter;
+                interpreter.Interpret("bytecode.txt");
+
             }
             else
             {

@@ -4,7 +4,6 @@
 #include <string>
 #include <unordered_map>
 
-
 struct BytecodeContainer
 {
     // Combination of iload and iconst instructions.
@@ -24,12 +23,11 @@ struct BytecodeContainer
     void AddCondJumpInstruction(const std::string& label);
 
     // Write the bytecode instructions to a file.
-    void WriteToFile(const std::string& filename);
-    void ReadFromFile(const std::string& filename);
+    bool WriteToFile(const std::string& filename);
+    bool ReadFromFile(const std::string& filename);
 
     size_t size();
     std::string& at(size_t index);
 
-private:
     std::vector<std::string> bytecodeInstructions;
 };

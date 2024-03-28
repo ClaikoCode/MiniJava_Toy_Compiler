@@ -82,11 +82,8 @@ void CFGHandler::GenerateDOT(const std::string& filename)
     printf("CFG dot file generated.\n");
 }
 
-void CFGHandler::GenerateBytecode(const std::string& filename)
+void CFGHandler::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
-    // Holds all the bytecode instructions for the program after generation.
-    BytecodeContainer bytecodeInstructions;
-
     // Recursive lambda function to generate bytecode for all nodes in the CFG.
     std::function<void(ControlFlowNode*, std::unordered_set<ControlFlowNode*>&)> GenerateBytecodeRecursive = [&]
     (ControlFlowNode* node, std::unordered_set<ControlFlowNode*>& visitedNodes)
@@ -123,6 +120,4 @@ void CFGHandler::GenerateBytecode(const std::string& filename)
             GenerateBytecodeRecursive(&entryPoint.entryCFGNode, visitedNodes);
         }
     }
-
-    bytecodeInstructions.WriteToFile(filename);
 }

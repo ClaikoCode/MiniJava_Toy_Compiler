@@ -1,38 +1,15 @@
 #include "BytecodeContainer.h"
 #include "CompilerStringDefines.h"
 #include "ConsolePrinter.h"
+#include "BytecodeDefinitions.h"
+#include "Utils.h"
 
 #include <unordered_map>
 #include <fstream>
 
-// Constexpr strings for bytecode instructions.
-constexpr char ILOAD[] = "iload ";
-constexpr char ICONST[] = "iconst ";
-constexpr char ISTORE[] = "istore ";
-constexpr char INVOKESTATIC[] = "invokevirtual ";
-constexpr char PARAM[] = "param ";
-constexpr char RETURN[] = "ireturn";
-constexpr char GOTO[] = "goto ";
-constexpr char IFFALSE[] = "iffalse ";
+#define STR_INS(operator, arg) std::string(operator) + " " + arg
 
-constexpr char NOT_IMPLEMENTED[] = "NOT IMPLEMENTED ";
-
-static std::unordered_map<std::string, std::string> operatorToInstructionOp = {
-    {O_STR_ADD, "iadd "},
-    {O_STR_SUB, "isub "},
-    {O_STR_MUL, "imul "},
-    {O_STR_DIV, "idiv "},
-    {O_STR_NOT, "inot "},
-    {O_STR_AND, "iand "},
-    {O_STR_OR, "ior "},
-    {O_STR_LT, "ilt "}
-};
-
-// Strings for formatting standardization
-constexpr char SPACE[] = " ";
-constexpr char COLON[] = ":";
-constexpr char DOT[] = ".";
-constexpr char INDENT[] = "\t";
+using namespace BytecodeDefinitions;
 
 void BytecodeContainer::AddUncondJumpInstruction(const std::string& label)
 {
@@ -74,11 +51,11 @@ BytecodeContainer& BytecodeContainer::AddSymbol(const std::string& symbol)
     // Check if symbol is a literal value. If so, use iconst instruction.
     if (IsLiteral(symbol))
     {
-        bytecodeInstructions.push_back(ICONST + symbol);
+        bytecodeInstructions.push_back(STR_INS(ICONST, symbol));
     }
     else
     {
-        bytecodeInstructions.push_back(ILOAD + symbol);
+        bytecodeInstructions.push_back(STR_INS(ILOAD, symbol));
     }
 
     return *this;
@@ -86,21 +63,22 @@ BytecodeContainer& BytecodeContainer::AddSymbol(const std::string& symbol)
 
 BytecodeContainer& BytecodeContainer::AddOperator(const std::string& op)
 {
-    bytecodeInstructions.push_back(operatorToInstructionOp[op]);
+    bytecodeInstructions.push_back(operatorToInstructionOp.at(op));
 
     return *this;
 }
 
 BytecodeContainer& BytecodeContainer::AddStore(const std::string& symbol)
 {
-    bytecodeInstructions.push_back(ISTORE + symbol);
+    bytecodeInstructions.push_back(STR_INS(ISTORE, symbol));
 
     return *this;
 }
 
 BytecodeContainer& BytecodeContainer::AddInvokeStatic(const std::string& callerName, const std::string& methodName)
 {
-    bytecodeInstructions.push_back(INVOKESTATIC + callerName + "." + methodName);
+    std::string method = callerName + DOT + methodName;
+    bytecodeInstructions.push_back(STR_INS(INVOKESTATIC, method));
 
     return *this;
 }
@@ -114,7 +92,7 @@ BytecodeContainer& BytecodeContainer::AddReturn()
 
 BytecodeContainer& BytecodeContainer::AddJump(const std::string& label)
 {
-    bytecodeInstructions.push_back(GOTO + label);
+    bytecodeInstructions.push_back(STR_INS(GOTO, label));
 
     return *this;
 }
@@ -140,12 +118,7 @@ void BytecodeContainer::AddBlock(const std::string& label)
     AddAny(label + ":");
 }
 
-bool StrContains(const std::string& str, const std::string& substr)
-{
-    return str.find(substr) != std::string::npos;
-}
-
-void BytecodeContainer::WriteToFile(const std::string& filename)
+bool BytecodeContainer::WriteToFile(const std::string& filename)
 {
     printf("\nGenerating bytecode file...\n");
 
@@ -153,7 +126,7 @@ void BytecodeContainer::WriteToFile(const std::string& filename)
     if (!file.is_open())
     {
         PrintError("Failed to open bytecode file for writing.");
-        return;
+        return false;
     }
 
     int indent = 0;
@@ -192,9 +165,11 @@ void BytecodeContainer::WriteToFile(const std::string& filename)
     }
 
     printf("Bytecode file generated.\n");
+
+    return true;
 }
 
-void BytecodeContainer::ReadFromFile(const std::string& filename)
+bool BytecodeContainer::ReadFromFile(const std::string& filename)
 {
     printf("\nReading bytecode file...\n");
 
@@ -202,7 +177,7 @@ void BytecodeContainer::ReadFromFile(const std::string& filename)
     if (!file.is_open())
     {
         PrintError("Failed to open bytecode file for reading.");
-        return;
+        return false;
     }
 
     std::string line;
@@ -215,4 +190,6 @@ void BytecodeContainer::ReadFromFile(const std::string& filename)
     }
 
     printf("Bytecode file read.\n");
+
+    return true;
 }
