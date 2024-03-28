@@ -60,3 +60,9 @@
 #define O_STR_AND "&&" 
 #define O_STR_OR "||" 
 #define O_STR_NOT "!" 
+
+
+static bool IsTypeLiteral(const std::string& type)
+{
+    return type == T_STR_BOOLEAN || type == T_STR_INT || type == T_STR_STRING || type == T_STR_ARRAY;
+}

@@ -9,7 +9,7 @@
 
 const char* IdentifierRecordToString(SymbolRecord record)
 {
-    switch(record)
+    switch (record)
     {
         case SymbolRecord::VARIABLE:
             return "VARIABLE";
@@ -38,11 +38,11 @@ SymbolTable* SymbolTable::AddSymbolTable(Identifier& identifier, Node* astNode)
 
 SymbolTable* SymbolTable::GetChildWithName(const std::string* name) const
 {
-    if(name != nullptr)
+    if (name != nullptr)
     {
-        for(SymbolTable* child : children)
+        for (SymbolTable* child : children)
         {
-            if(child->identifier.symbol.GetName() == *name)
+            if (child->identifier.symbol.GetName() == *name)
             {
                 return child;
             }
@@ -62,30 +62,30 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
         const std::string& nodeType = child->type;
         const std::string& nodeValue = child->value;
 
-        if(nodeType == N_STR_CLASS_DECL || nodeType == N_STR_MAIN_CLASS)
+        if (nodeType == N_STR_CLASS_DECL || nodeType == N_STR_MAIN_CLASS)
         {
             std::string& className = GetFirstChild(child)->value;
-            
+
             Identifier classIdentifier(className, scopeDepth, SymbolRecord::CLASS, child->lineno, className);
 
             // Add "this" to the symbol table when it is a class.
             Identifier this_identifier(T_STR_THIS, scopeDepth + 1, SymbolRecord::VARIABLE, child->lineno, className);
-            
+
             SymbolTable* newSymbolTable = symbolTable->AddSymbolTable(classIdentifier, child);
             newSymbolTable->AddVariable(this_identifier);
 
             BuildSymbolTable(child, newSymbolTable);
         }
-        else if(nodeType == N_STR_METHOD_DECL)
+        else if (nodeType == N_STR_METHOD_DECL)
         {
             const std::string* methodName = GetMethodIdentifierName(child);
             const IdentifierDatatype* returnType = GetMethodExpectedReturnType(child);
             Identifier methodIdentifier(*methodName, scopeDepth, SymbolRecord::METHOD, child->lineno, *returnType);
 
             Node* methodParams = GetMethodParams(child);
-            if(methodParams != nullptr)
+            if (methodParams != nullptr)
             {
-                for(auto paramVar : methodParams->children)
+                for (auto paramVar : methodParams->children)
                 {
                     IdentifierDatatype paramType = paramVar->value;
                     methodIdentifier.symbolinfo.typeParameters.push_back(paramType);
@@ -104,8 +104,8 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
     const std::string& nodeType = root->type;
     const std::string& nodeValue = root->value;
 
-    if(nodeType == N_STR_VARIABLE)
-    {   
+    if (nodeType == N_STR_VARIABLE)
+    {
         IdentifierDatatype varType = nodeValue;
         std::string varName = GetChildAtIndex(root, 0)->value;
 
@@ -116,7 +116,7 @@ void BuildSymbolTable(Node* root, SymbolTable* symbolTable)
 
 void PrintDepthIndent(int depth)
 {
-    for(int i = 0; i < depth; i++)
+    for (int i = 0; i < depth; i++)
     {
         PrintRaw("|  ");
     }
@@ -124,7 +124,7 @@ void PrintDepthIndent(int depth)
 
 void PrintIdentifierRaw(Identifier& identifier, int depth)
 {
-    PrintRaw("%d - %s\n", identifier.symbolinfo.lineno, identifier.symbol.Stringfy().c_str());
+    PrintRaw("%d - %s\n", identifier.symbolinfo.lineno, identifier.symbol.name.c_str());
 }
 
 void PrintIdentifier(const std::string& prefix, Identifier& identifier, int depth)
@@ -153,7 +153,7 @@ void PrintSymbolTable(SymbolTable* symbolTable, int depth/*=0*/)
 {
     SymbolRecord record = symbolTable->identifier.symbol.record;
 
-    switch(record)
+    switch (record)
     {
         case SymbolRecord::METHOD:
             PrintFunctionIdentifier(symbolTable->identifier, depth);
@@ -165,16 +165,16 @@ void PrintSymbolTable(SymbolTable* symbolTable, int depth/*=0*/)
             PrintIdentifier("UNKNOWN", symbolTable->identifier, depth);
             break;
     }
-    
-    for(auto variable : symbolTable->variables)
+
+    for (auto variable : symbolTable->variables)
     {
         // Don't print "this" as a variable.
-        if(variable.symbol.name != T_STR_THIS)
-            PrintVariableIdentifier(variable, depth+1);
+        if (variable.symbol.name != T_STR_THIS)
+            PrintVariableIdentifier(variable, depth + 1);
     }
 
-    for(auto child : symbolTable->children)
+    for (auto child : symbolTable->children)
     {
-        PrintSymbolTable(child, depth+1);
+        PrintSymbolTable(child, depth + 1);
     }
 }

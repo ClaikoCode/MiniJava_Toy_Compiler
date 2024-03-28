@@ -6,8 +6,8 @@
 #include "CompilerPrinter.h"
 
 void ScopeAnalyzer::pop()
-{   
-    if(scopeStack.empty())
+{
+    if (scopeStack.empty())
     {
         PrintError("Cannot pop from empty stack\n");
         return;
@@ -25,7 +25,7 @@ void ScopeAnalyzer::push(const Scope& scope)
 
 bool ScopeAnalyzer::SymbolExists(const Symbol& symbol)
 {
-    if(symbolLUT.count(symbol) == 0)
+    if (symbolLUT.count(symbol) == 0)
     {
         return false;
     }
@@ -43,11 +43,11 @@ Identifier* ScopeAnalyzer::GetIdentifier(const std::string& name, SymbolRecord r
     Symbol symbol = Symbol(name, -1, record);
 
     // Start from the current scope and go up the stack
-    for(int i = scopeStack.size()-1; i >= 0; i--)
+    for (int i = scopeStack.size() - 1; i >= 0; i--)
     {
         symbol.scopeDepth = i; // Set the scope depth to the current scope
 
-        if(SymbolExists(symbol))
+        if (SymbolExists(symbol))
         {
             return &symbolLUT[symbol];
         }
@@ -80,7 +80,7 @@ Identifier* ScopeAnalyzer::GetCurrentMethod()
 {
     Scope* scope = GetCurrentScope();
 
-    if(scope == nullptr)
+    if (scope == nullptr)
     {
         return nullptr;
     }
@@ -103,14 +103,14 @@ Scope* ScopeAnalyzer::GetCurrentScope()
 
 Identifier* ScopeAnalyzer::GetClassMethod(const std::string& className, const std::string& methodName)
 {
-    if(!scopeStack.empty())
+    if (!scopeStack.empty())
     {
-        Scope &globalScope = scopeStack.front();
+        Scope& globalScope = scopeStack.front();
         for (const Scope* child : globalScope.children)
         {
             if (child->identifier.symbol.name == className)
             {
-                for(Scope* method : child->children)
+                for (Scope* method : child->children)
                 {
                     if (method->identifier.symbol.name == methodName)
                     {
@@ -120,7 +120,7 @@ Identifier* ScopeAnalyzer::GetClassMethod(const std::string& className, const st
             }
         }
     }
-    
+
     return nullptr;
 }
 
@@ -133,24 +133,24 @@ std::string ScopeAnalyzer::BuildScopeString() const
 {
     std::string scopeString = "";
     // Start from 1 to skip the global scope
-    for(int i = 1; i < scopeStack.size(); i++)
-    {   
+    for (int i = 1; i < scopeStack.size(); i++)
+    {
         const SymbolTable* symbolTable = &scopeStack[i];
         scopeString += symbolTable->identifier.symbol.name;
 
-        if(symbolTable->identifier.symbol.record == SymbolRecord::METHOD)
+        if (symbolTable->identifier.symbol.record == SymbolRecord::METHOD)
         {
             scopeString += "()";
         }
-        
-        if(i < scopeStack.size()-1)
+
+        if (i < scopeStack.size() - 1)
         {
             scopeString += "::";
         }
-        
+
     }
 
-    if(scopeString.empty())
+    if (scopeString.empty())
     {
         scopeString = "global";
     }
@@ -167,15 +167,15 @@ void ScopeAnalyzer::AddIdentifier(const Identifier& identifier)
 {
     const Symbol& symbol = identifier.symbol;
 
-    if(IsInScope(identifier))
+    if (IsInScope(identifier))
     {
         PrintCompErr(
-                "Redeclaration of %s '%s' in scope.\n",
-                identifier.symbolinfo.lineno,
-                BuildScopeString().c_str(),
-                symbol.GetRecord(), 
-                symbol.GetName()
-            );
+            "Redeclaration of %s '%s' in scope.\n",
+            identifier.symbolinfo.lineno,
+            BuildScopeString().c_str(),
+            symbol.GetRecord(),
+            symbol.GetName()
+        );
     }
 
     // Always update the symbolLUT with the latest identifier to keep it consistent.
@@ -197,14 +197,14 @@ void ScopeAnalyzer::ModifyScopeInSet(const Scope& scope, bool add)
             T_STR_ARRAY
     };
 
-    // Add all variables to the set
-    for(const Identifier& var : scope.variables)
-    {   
+    // Modify all variables to the set
+    for (const Identifier& var : scope.variables)
+    {
         add ? AddIdentifier(var) : RemoveIdentifier(var);
     }
 
-    // Add all functions and classes to the set
-    for(const auto& child : scope.children)
+    // Modify all functions and classes to the set
+    for (const auto& child : scope.children)
     {
         const Identifier& symbol = child->identifier;
         add ? AddIdentifier(symbol) : RemoveIdentifier(symbol);

@@ -80,8 +80,8 @@ int main(int argc, char* argv[])
             printf("Creating symbol table...\n");
             SymbolTable* rootSymbolTable = new SymbolTable(Identifier("global", (-1u), SymbolRecord::UNKNOWN, 0, NO_TYPE), rootNode, nullptr);
             BuildSymbolTable(rootNode, rootSymbolTable);
-            //printf("Symbol table created.\n");
-            //PrintSymbolTable(rootSymbolTable);
+            printf("Symbol table created.\n");
+            PrintSymbolTable(rootSymbolTable);
 
             ScopeAnalyzer scopeAnalyzer;
             printf("\n");

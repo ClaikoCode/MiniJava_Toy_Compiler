@@ -5,11 +5,11 @@
 
 Node* GetNodeChildWithName(const Node* root, std::string name)
 {
-    if(name != "" && root != nullptr)
+    if (name != "" && root != nullptr)
     {
-        for(Node* child : root->children)
+        for (Node* child : root->children)
         {
-            if(child->type == name)
+            if (child->type == name)
             {
                 return child;
             }
@@ -21,13 +21,13 @@ Node* GetNodeChildWithName(const Node* root, std::string name)
 
 Node* GetChildAtIndex(const Node* root, int index)
 {
-    if(index < 0 || index >= root->children.size())
+    if (index < 0 || index >= root->children.size())
     {
         return nullptr;
     }
 
     auto it = root->children.begin();
-    for(int i = 0; i < index; i++)
+    for (int i = 0; i < index; i++)
     {
         it++;
     }
@@ -57,9 +57,9 @@ Node* GetReturnNode(const Node* methodDeclNode)
 
 const std::string* GetMethodExpectedReturnType(const Node* methodDeclNode)
 {
-    if(methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
+    if (methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
         return &methodDeclNode->value;
-    
+
     return nullptr;
 }
 
@@ -70,7 +70,7 @@ const std::string* GetMethodIdentifierName(const Node* methodDeclNode)
 
 Node* GetMethodIdentifierNode(const Node* methodDeclNode)
 {
-    if(methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
+    if (methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
     {
         return GetFirstChild(methodDeclNode);
     }
@@ -80,7 +80,7 @@ Node* GetMethodIdentifierNode(const Node* methodDeclNode)
 
 uint32_t GetMethodNumParams(const Node* methodDeclNode)
 {
-    if(methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
+    if (methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
     {
         Node* paramsNode = GetNodeChildWithName(methodDeclNode, N_STR_VARIABLE_LIST);
         return paramsNode->children.size();
@@ -96,7 +96,7 @@ Node* GetMethodParams(const Node* methodDeclNode)
 
 Node* GetClassIdentifierNode(const Node* classDeclNode)
 {
-    if(classDeclNode != nullptr && classDeclNode->type == N_STR_CLASS_DECL)
+    if (classDeclNode != nullptr && classDeclNode->type == N_STR_CLASS_DECL)
     {
         return GetFirstChild(classDeclNode);
     }
@@ -104,7 +104,7 @@ Node* GetClassIdentifierNode(const Node* classDeclNode)
 
 const std::string* GetClassIdentifierName(const Node* classDeclNode)
 {
-    if(classDeclNode != nullptr)
+    if (classDeclNode != nullptr)
     {
         return GetIdentifierName(GetFirstChild(classDeclNode));
     }
@@ -114,7 +114,7 @@ const std::string* GetClassIdentifierName(const Node* classDeclNode)
 
 const std::string* GetIdentifierName(const Node* identifierNode)
 {
-    if(identifierNode != nullptr)
+    if (identifierNode != nullptr)
     {
         return &identifierNode->value;
     }
@@ -129,18 +129,10 @@ const std::string* GetIdentifierType(const Node* identifierNode)
 
 bool IsNodeLiteral(const Node* node)
 {
-    if(node != nullptr)
+    if (node != nullptr)
     {
         const std::string& nodeType = node->type == N_STR_VARIABLE ? node->value : node->type;
-
-        static const std::unordered_set<std::string> literalNodeTypes = {
-            T_STR_BOOLEAN,
-            T_STR_INT,
-            T_STR_STRING,
-            T_STR_ARRAY,
-        };
-
-        return literalNodeTypes.count(nodeType) > 0;
+        return IsTypeLiteral(nodeType);
     }
 
     return false;
