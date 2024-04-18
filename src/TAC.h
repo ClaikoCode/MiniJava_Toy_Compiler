@@ -47,6 +47,15 @@ struct TACParam : public TAC
     void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
 };
 
+struct TACArg : public TAC
+{
+    TACArg(std::string arg)
+        : TAC(arg, "", "arg", "")
+    {}
+
+    void GenerateBytecode(BytecodeContainer& bytecodeInstructions) override;
+};
+
 struct TACJump : public TAC
 {
     TACJump(std::string label)

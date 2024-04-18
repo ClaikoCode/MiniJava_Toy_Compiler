@@ -6,6 +6,7 @@
 
 #include <unordered_map>
 #include <fstream>
+#include <algorithm> // std::remove
 
 #define STR_INS(operator, arg) std::string(operator) + " " + arg
 
@@ -18,7 +19,7 @@ void BytecodeContainer::AddUncondJumpInstruction(const std::string& label)
 
 void BytecodeContainer::AddCondJumpInstruction(const std::string& label)
 {
-    AddAny(std::string(IFFALSE) + GOTO + label);
+    AddAny(std::string(IFFALSE) + " " + GOTO + " " + label);
 }
 
 bool IsLiteral(const std::string& symbol)
@@ -41,12 +42,12 @@ BytecodeContainer& BytecodeContainer::AddAny(const std::string& rawInstruction)
 
 BytecodeContainer& BytecodeContainer::AddNonimplemented(const std::string& instruction)
 {
-    bytecodeInstructions.push_back(std::string(NOT_IMPLEMENTED) + "| " + instruction);
+    bytecodeInstructions.push_back(std::string(NOT_IMPLEMENTED) + " | " + instruction);
 
     return *this;
 }
 
-BytecodeContainer& BytecodeContainer::AddSymbol(const std::string& symbol)
+BytecodeContainer& BytecodeContainer::AddLoad(const std::string& symbol)
 {
     // Check if symbol is a literal value. If so, use iconst instruction.
     if (IsLiteral(symbol))
@@ -75,10 +76,10 @@ BytecodeContainer& BytecodeContainer::AddStore(const std::string& symbol)
     return *this;
 }
 
-BytecodeContainer& BytecodeContainer::AddInvokeStatic(const std::string& callerName, const std::string& methodName)
+BytecodeContainer& BytecodeContainer::AddInvokeVirtual(const std::string& callerName, const std::string& methodName)
 {
     std::string method = callerName + DOT + methodName;
-    bytecodeInstructions.push_back(STR_INS(INVOKESTATIC, method));
+    bytecodeInstructions.push_back(STR_INS(INVOKEVIRTUAL, method));
 
     return *this;
 }
@@ -169,27 +170,14 @@ bool BytecodeContainer::WriteToFile(const std::string& filename)
     return true;
 }
 
-bool BytecodeContainer::ReadFromFile(const std::string& filename)
+void BytecodeContainer::RemoveFirstParams()
 {
-    printf("\nReading bytecode file...\n");
+    // Sort the indices in descending order so we can remove them without affecting the rest.
+    std::sort(firstCallParamIndices.begin(), firstCallParamIndices.end(), std::greater<size_t>());
 
-    std::ifstream file(filename);
-    if (!file.is_open())
+    // Safely remove the first parameter instructions.
+    for (size_t index : firstCallParamIndices)
     {
-        PrintError("Failed to open bytecode file for reading.");
-        return false;
+        bytecodeInstructions.erase(bytecodeInstructions.begin() + index);
     }
-
-    std::string line;
-    while (std::getline(file, line))
-    {
-        // Remove all indentation.
-        line.erase(0, line.find_first_not_of(INDENT));
-
-        bytecodeInstructions.push_back(line);
-    }
-
-    printf("Bytecode file read.\n");
-
-    return true;
 }

@@ -11,8 +11,7 @@ namespace BytecodeDefinitions
     constexpr char ILOAD[] = "iload";
     constexpr char ICONST[] = "iconst";
     constexpr char ISTORE[] = "istore";
-    constexpr char INVOKESTATIC[] = "invokevirtual";
-    constexpr char PARAM[] = "param";
+    constexpr char INVOKEVIRTUAL[] = "invokevirtual";
     constexpr char RETURN[] = "ireturn";
     constexpr char GOTO[] = "goto";
     constexpr char IFFALSE[] = "iffalse";

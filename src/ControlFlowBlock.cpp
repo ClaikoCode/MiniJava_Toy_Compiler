@@ -11,12 +11,12 @@ void ControlFlowBlock::dump()
     }
 }
 
-void ControlFlowBlock::Add(TAC* tac)
+void ControlFlowBlock::AddTAC(TAC* tac)
 {
     instructions.push_back(tac);
 }
 
 std::string ControlFlowBlock::GenerateLabel()
 {
-    return "_L" + std::to_string(tempCount++);
+    return "_L" + std::to_string(localTempVarCount++);
 }

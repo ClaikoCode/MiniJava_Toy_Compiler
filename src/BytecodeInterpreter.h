@@ -23,6 +23,11 @@ enum class BytecodeInstruction
     IEQ,
     ILT,
     IGT,
+    ARG,
+    PARAM,
+    RETURN,
+    IFFALSE,
+    INVOKEVIRTUAL,
     IPRINT,
     STOP,
     NULL_INSTRUCTION
@@ -31,6 +36,7 @@ enum class BytecodeInstruction
 struct Activation
 {
     size_t programCounter;
+    std::string className; // This is used to handle method calls that use keyword "this".
     std::unordered_map<std::string, int> variables;
 };
 
@@ -39,7 +45,8 @@ struct BytecodeInterpreter
     void Interpret(const std::string& filename);
 
 private:
-    void FindLabels();
+    void Setup();
+    bool ReadFromFile(const std::string& filename);
     std::string GetNextInstruction();
 
     void ExecIload(const std::string_view arg);
@@ -56,9 +63,13 @@ private:
     void ExecIEq();
     void ExecILt();
     void ExecIGt();
+    void ExecReturn();
+    void ExecIfFalse(const std::string_view arg);
+    void ExecInvokeVirtual(const std::string_view arg);
     void ExecIPrint();
 
     BytecodeInstruction GetInstructionId(const std::string& instruction) const;
+    size_t FindLabelIndex(const std::string& label) const;
 
 private:
     // Stack for storing the current state of the program.
@@ -67,6 +78,6 @@ private:
     Activation currentActivation = { 0, {} };
     size_t mainMethodIndex = -1;
 
-    BytecodeContainer bytecodeContainer;
+    std::vector<std::string> instructions;
     std::unordered_map<std::string, size_t> gotoLabelIndices;
 };

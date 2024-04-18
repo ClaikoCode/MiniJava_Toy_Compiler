@@ -3,10 +3,11 @@
 #include "Utils.h"
 
 #include <charconv>
+#include <fstream>
 
 using namespace BytecodeDefinitions;
 
-#define BINOP(op) \
+#define PUSH_BINOP(op) \
     int rhs = stack.top(); \
     stack.pop(); \
     int lhs = stack.top(); \
@@ -15,7 +16,7 @@ using namespace BytecodeDefinitions;
 
 void BytecodeInterpreter::Interpret(const std::string& filename)
 {
-    bool readSuccess = bytecodeContainer.ReadFromFile(filename);
+    bool readSuccess = ReadFromFile(filename);
 
     if (!readSuccess)
     {
@@ -23,11 +24,7 @@ void BytecodeInterpreter::Interpret(const std::string& filename)
         return;
     }
 
-    // Find all labels.
-    FindLabels();
-
-    // Start interpreting the bytecode.
-    currentActivation.programCounter = mainMethodIndex;
+    Setup();
 
     BytecodeInstruction instructionId = BytecodeInstruction::NULL_INSTRUCTION;
     while (instructionId != BytecodeInstruction::STOP)
@@ -87,7 +84,7 @@ void BytecodeInterpreter::Interpret(const std::string& filename)
                 break;
 
             case BytecodeInstruction::IEQ:
-                //ExecIEq();
+                ExecIEq();
                 break;
 
             case BytecodeInstruction::ILT:
@@ -95,11 +92,23 @@ void BytecodeInterpreter::Interpret(const std::string& filename)
                 break;
 
             case BytecodeInstruction::IGT:
-                //ExecIGt();
+                ExecIGt();
+                break;
+
+            case BytecodeInstruction::INVOKEVIRTUAL:
+                ExecInvokeVirtual(arg);
+                break;
+
+            case BytecodeInstruction::RETURN:
+                ExecReturn();
                 break;
 
             case BytecodeInstruction::IPRINT:
                 ExecIPrint();
+                break;
+
+            case BytecodeInstruction::IFFALSE:
+                ExecIfFalse(arg);
                 break;
 
             case BytecodeInstruction::STOP:
@@ -129,6 +138,9 @@ BytecodeInstruction BytecodeInterpreter::GetInstructionId(const std::string& ins
         { IEQ, BytecodeInstruction::IEQ },
         { ILT, BytecodeInstruction::ILT },
         { IGT, BytecodeInstruction::IGT },
+        { RETURN, BytecodeInstruction::RETURN },
+        { IFFALSE, BytecodeInstruction::IFFALSE },
+        { INVOKEVIRTUAL, BytecodeInstruction::INVOKEVIRTUAL },
         { PRINT, BytecodeInstruction::IPRINT },
         { STOP, BytecodeInstruction::STOP }
     };
@@ -143,11 +155,20 @@ BytecodeInstruction BytecodeInterpreter::GetInstructionId(const std::string& ins
     return it->second;
 }
 
-void BytecodeInterpreter::FindLabels()
+size_t BytecodeInterpreter::FindLabelIndex(const std::string& label) const
 {
-    for (int i = 0; i < bytecodeContainer.bytecodeInstructions.size(); i++)
+    auto it = gotoLabelIndices.find(label);
+
+    Assert(it != gotoLabelIndices.end(), "Label not found.");
+
+    return it->second;
+}
+
+void BytecodeInterpreter::Setup()
+{
+    for (int i = 0; i < instructions.size(); i++)
     {
-        const std::string& instruction = bytecodeContainer.bytecodeInstructions[i];
+        const std::string& instruction = instructions[i];
 
         if (instruction.back() == COLON[0])
         {
@@ -161,11 +182,47 @@ void BytecodeInterpreter::FindLabels()
             gotoLabelIndices[label] = (size_t)i;
         }
     }
+
+    // Set the main method as the current activation.
+    currentActivation.programCounter = mainMethodIndex;
+
+    // Find the class name of the main method.
+    std::string mainFuncLabel = instructions[mainMethodIndex - 1];
+    size_t delimiterIndex = mainFuncLabel.find(DOT);
+    std::string mainClassName = mainFuncLabel.substr(0, delimiterIndex);
+
+    // Set the class name of the main method.
+    currentActivation.className = mainClassName;
+}
+
+bool BytecodeInterpreter::ReadFromFile(const std::string& filename)
+{
+    printf("\nReading bytecode file...\n");
+
+    std::ifstream file(filename);
+    if (!file.is_open())
+    {
+        PrintError("Failed to open bytecode file for reading.");
+        return false;
+    }
+
+    std::string line;
+    while (std::getline(file, line))
+    {
+        // Remove all indentation.
+        line.erase(0, line.find_first_not_of(INDENT));
+
+        instructions.push_back(line);
+    }
+
+    printf("Bytecode file read.\n");
+
+    return true;
 }
 
 std::string BytecodeInterpreter::GetNextInstruction()
 {
-    return bytecodeContainer.bytecodeInstructions[++currentActivation.programCounter];
+    return instructions[++currentActivation.programCounter];
 }
 
 void BytecodeInterpreter::ExecIload(const std::string_view arg)
@@ -205,11 +262,7 @@ void BytecodeInterpreter::ExecIstore(const std::string_view arg)
 
 void BytecodeInterpreter::ExecGoto(const std::string_view arg)
 {
-    auto it = gotoLabelIndices.find(std::string(arg));
-
-    Assert(it != gotoLabelIndices.end(), "Label not found.");
-
-    size_t blockIndex = it->second;
+    size_t blockIndex = FindLabelIndex(std::string(arg));
 
     // Jump to the block.
     currentActivation.programCounter = blockIndex;
@@ -217,22 +270,22 @@ void BytecodeInterpreter::ExecGoto(const std::string_view arg)
 
 void BytecodeInterpreter::ExecIAdd()
 {
-    BINOP(+);
+    PUSH_BINOP(+);
 }
 
 void BytecodeInterpreter::ExecISub()
 {
-    BINOP(-);
+    PUSH_BINOP(-);
 }
 
 void BytecodeInterpreter::ExecIMul()
 {
-    BINOP(*);
+    PUSH_BINOP(*);
 }
 
 void BytecodeInterpreter::ExecIDiv()
 {
-    BINOP(/ );
+    PUSH_BINOP(/ );
 }
 
 void BytecodeInterpreter::ExecINot()
@@ -245,27 +298,87 @@ void BytecodeInterpreter::ExecINot()
 
 void BytecodeInterpreter::ExecIAnd()
 {
-    BINOP(&&);
+    PUSH_BINOP(&&);
 }
 
 void BytecodeInterpreter::ExecIOr()
 {
-    BINOP(|| );
+    PUSH_BINOP(|| );
 }
 
 void BytecodeInterpreter::ExecIEq()
 {
-    BINOP(== );
+    PUSH_BINOP(== );
 }
 
 void BytecodeInterpreter::ExecILt()
 {
-    BINOP(< );
+    PUSH_BINOP(< );
 }
 
 void BytecodeInterpreter::ExecIGt()
 {
-    BINOP(> );
+    PUSH_BINOP(> );
+}
+
+void BytecodeInterpreter::ExecReturn()
+{
+    currentActivation = activationStack.top();
+    activationStack.pop();
+}
+
+void BytecodeInterpreter::ExecIfFalse(const std::string_view arg)
+{
+    int value = stack.top();
+    stack.pop();
+
+    if (value == 0)
+    {
+        // Get the goto label.
+        size_t delimiterIndex = arg.find(DELIMITER);
+        std::string_view label = arg.substr(delimiterIndex + 1);
+
+        // Use the same logic as GOTO.
+        ExecGoto(label);
+    }
+    else
+    {
+        // Otherwise, offset the program counter by 1 to skip to the next block label.
+        currentActivation.programCounter++;
+    }
+}
+
+void BytecodeInterpreter::ExecInvokeVirtual(const std::string_view arg)
+{
+    activationStack.push(currentActivation);
+
+    // Initialize new activation record.
+    Activation newActivation = { 0 };
+
+    std::string label = std::string(arg);
+    size_t dotIndex = label.find(DOT);
+    std::string className = label.substr(0, dotIndex);
+
+    // Get the label index for the new activation record.
+    if (className == "this") // Handle method calls that use keyword "this".
+    {
+        // Create the new label.
+        std::string methodName = label.substr(dotIndex + 1);
+        label = currentActivation.className + DOT + methodName;
+
+        // Keep the class name the same.
+        newActivation.className = currentActivation.className;
+    }
+    else
+    {
+        newActivation.className = className;
+    }
+
+    size_t labelIndex = FindLabelIndex(label);
+    newActivation.programCounter = labelIndex + 1; // +1 to get the position of the first block.
+
+    // Set the new activation record.
+    currentActivation = newActivation;
 }
 
 void BytecodeInterpreter::ExecIPrint()
@@ -275,3 +388,4 @@ void BytecodeInterpreter::ExecIPrint()
 
     printf("%d\n", value);
 }
+

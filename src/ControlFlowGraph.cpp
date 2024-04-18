@@ -66,7 +66,7 @@ std::string GenIRBinaryOp(Node* root, ControlFlowNode* blockNode)
     std::string op = root->value;
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACExpression(label, lhs_label, op, rhs_label));
+    blockNode->AddTAC(new TACExpression(label, lhs_label, op, rhs_label));
 
     return label;
 }
@@ -80,7 +80,7 @@ std::string GenIRUnaryOp(Node* root, ControlFlowNode* blockNode)
     std::string op = root->value;
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACExpression(label, "", op, child_label));
+    blockNode->AddTAC(new TACExpression(label, "", op, child_label));
 
     return label;
 }
@@ -92,7 +92,7 @@ std::string GenIRNewArray(Node* root, ControlFlowNode* blockNode)
     std::string size_label = GenIRExpression(sizeNode, blockNode);
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACNew(label, size_label));
+    blockNode->AddTAC(new TACNew(label, size_label));
 
     return label;
 }
@@ -103,7 +103,7 @@ std::string GenIRNew(Node* root, ControlFlowNode* blockNode)
     const std::string* identifier = GetIdentifierName(identifierNode);
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACNew(label, *identifier));
+    blockNode->AddTAC(new TACNew(label, *identifier));
 
     return label;
 }
@@ -115,7 +115,7 @@ std::string GenIRLength(Node* root, ControlFlowNode* blockNode)
     std::string child_label = GenIRExpression(childNode, blockNode);
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACLength(label, child_label));
+    blockNode->AddTAC(new TACLength(label, child_label));
 
     return label;
 
@@ -131,7 +131,7 @@ std::string GenIRArrayIndex(Node* root, ControlFlowNode* blockNode)
     std::string rhs_label = GenIRExpression(rightNode, blockNode);
 
     std::string label = blockNode->block.GenerateLabel();
-    blockNode->Add(new TACArrIndex(label, lhs_label, rhs_label));
+    blockNode->AddTAC(new TACArrIndex(label, lhs_label, rhs_label));
 
     return label;
 }
@@ -159,12 +159,12 @@ std::string GenIRMethodCall(Node* root, ControlFlowNode* blockNode)
     // Generate the IR for all the arguments.
     for (auto& arg : arg_labels)
     {
-        blockNode->Add(new TACParam(arg));
+        blockNode->AddTAC(new TACParam(arg));
     }
 
     std::string label = blockNode->block.GenerateLabel();
     std::string num_args = std::to_string(arg_labels.size());
-    blockNode->Add(new TACMethodCall(label, *method_name, num_args));
+    blockNode->AddTAC(new TACMethodCall(label, *method_name, num_args));
 
     return label;
 }
@@ -205,7 +205,7 @@ ControlFlowNode* GenIRAssignment(Node* root, ControlFlowNode* blockNode)
     Node* leftNode = GetLeftChild(root);
     const std::string* lhs_label = GetIdentifierName(leftNode);
 
-    blockNode->Add(new TACAssign(*lhs_label, rhs_label));
+    blockNode->AddTAC(new TACAssign(*lhs_label, rhs_label));
 
     return blockNode;
 }
@@ -221,7 +221,7 @@ ControlFlowNode* GenIRArrIndexAssignment(Node* root, ControlFlowNode* blockNode)
     Node* valueNode = GetChildAtIndex(root, 2);
     std::string value_label = GenIRExpression(valueNode, blockNode);
 
-    blockNode->Add(new TACAssignIndexed(*identifier, index_label, value_label));
+    blockNode->AddTAC(new TACAssignIndexed(*identifier, index_label, value_label));
 
     return blockNode;
 }
@@ -285,7 +285,7 @@ ControlFlowNode* GenIRSystemPrint(Node* root, ControlFlowNode* blockNode)
     Node* childNode = GetFirstChild(root);
     std::string child_label = GenIRExpression(childNode, blockNode);
 
-    blockNode->Add(new TACSystemPrint(child_label));
+    blockNode->AddTAC(new TACSystemPrint(child_label));
 
     return blockNode;
 }

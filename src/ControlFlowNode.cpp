@@ -1,4 +1,5 @@
 #include "ControlFlowNode.h"
+#include "BytecodeDefinitions.h"
 
 void ControlFlowNode::dump()
 {
@@ -13,9 +14,9 @@ void ControlFlowNode::dump()
     }
 }
 
-void ControlFlowNode::Add(TAC* tac)
+void ControlFlowNode::AddTAC(TAC* tac)
 {
-    block.Add(tac);
+    block.AddTAC(tac);
 }
 
 void ControlFlowNode::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
@@ -33,6 +34,17 @@ void ControlFlowNode::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
     }
     else if (trueExit && falseExit)
     {
+        // Make sure to push the latest label to the stack.
+        std::string& last = bytecodeInstructions.bytecodeInstructions.back();
+
+        // Find the label
+        size_t firstDelimiter = last.find(BytecodeDefinitions::DELIMITER);
+        std::string label = last.substr(firstDelimiter + 1);
+
+        // Load the label onto the stack.
+        bytecodeInstructions.AddLoad(label);
+
+        // Add the conditional jump instruction.
         bytecodeInstructions.AddCondJumpInstruction(falseExit->block.label);
     }
 }

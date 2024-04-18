@@ -17,7 +17,7 @@ struct ControlFlowNode
     void dump();
 
     // Add a TAC instruction to the block of this node.
-    void Add(TAC* tac);
+    void AddTAC(TAC* tac);
 
     // Generate bytecode instructions for this node.
     void GenerateBytecode(BytecodeContainer& bytecodeInstructions);

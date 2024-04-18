@@ -18,7 +18,7 @@
 #define N_STR_METHOD_PARAMS "Method Parameters"
 #define N_STR_VARIABLE "Variable"
 #define N_STR_VARIABLE_DECLS "Variable Declarations"
-#define N_STR_VARIABLE_LIST "Variable List"
+#define N_STR_PARAMETER_LIST "Parameter List"
 #define N_STR_RETURN "Return"
 #define N_STR_METHOD_BODY "Method Body"
 #define N_STR_METHOD_CALL "Method Call"

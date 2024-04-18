@@ -7,24 +7,19 @@
 
 struct ControlFlowBlock
 {
-    ControlFlowBlock(std::string label)
-        : label(label)
-    {}
-
-    ControlFlowBlock()
-        : label("")
+    ControlFlowBlock() : label("")
     {
         static int blockCount = 0;
         label = "Block_" + std::to_string(blockCount++);
     }
 
     void dump();
-    void Add(TAC* tac);
+    void AddTAC(TAC* tac);
     std::string GenerateLabel();
 
     std::string label;
     std::vector<TAC*> instructions;
 
 private:
-    int tempCount = 0;
+    int localTempVarCount = 0;
 };

@@ -14,24 +14,33 @@ void TACExpression::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
     if (!arg1.empty())
     {
-        bytecodeInstructions.AddSymbol(arg1);
+        bytecodeInstructions.AddLoad(arg1);
     }
 
-    bytecodeInstructions.AddSymbol(arg2).AddOperator(op).AddStore(result);
+    bytecodeInstructions.AddLoad(arg2).AddOperator(op).AddStore(result);
 }
 
 void TACMethodCall::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
     size_t args = std::stoi(arg2);
-    const std::string& callerParam = bytecodeInstructions.at((bytecodeInstructions.size() - args));
+    size_t callerParamIndex = bytecodeInstructions.size() - args;
+    const std::string& callerParam = bytecodeInstructions.at(callerParamIndex);
     std::string callerName = callerParam.substr(callerParam.find(" ") + 1);
 
-    bytecodeInstructions.AddInvokeStatic(callerName, arg1).AddStore(result);
+    bytecodeInstructions.AddInvokeVirtual(callerName, arg1).AddStore(result);
+
+    // Save the index of the first parameter of the call.
+    bytecodeInstructions.firstCallParamIndices.push_back(callerParamIndex);
 }
 
 void TACParam::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
-    bytecodeInstructions.AddSymbol(result);
+    bytecodeInstructions.AddLoad(result);
+}
+
+void TACArg::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
+{
+    bytecodeInstructions.AddStore(result);
 }
 
 void TACJump::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
@@ -61,7 +70,7 @@ void TACArrIndex::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 
 void TACAssign::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
-    bytecodeInstructions.AddSymbol(arg1).AddStore(result);
+    bytecodeInstructions.AddLoad(arg1).AddStore(result);
 }
 
 void TACAssignIndexed::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
@@ -71,13 +80,13 @@ void TACAssignIndexed::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 
 void TACReturn::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
-    bytecodeInstructions.AddSymbol(result).AddReturn();
+    bytecodeInstructions.AddLoad(result).AddReturn();
 }
 
 void TACSystemPrint::GenerateBytecode(BytecodeContainer& bytecodeInstructions)
 {
     // This is enough according to the slides for bytecode generation.
-    bytecodeInstructions.AddSymbol(result).AddAny("print");
+    bytecodeInstructions.AddLoad(result).AddAny("print");
 }
 
 void TACStop::GenerateBytecode(BytecodeContainer& bytecodeInstructions)

@@ -97,13 +97,15 @@ int main(int argc, char* argv[])
             if (validStructure)
             {
                 CFGHandler cfgHandler;
-                cfgHandler.InitCFG(rootSymbolTable);
                 cfgHandler.ConstructCFG(rootSymbolTable);
-                cfgHandler.GenerateDOT("CFG.dot");
+
+                std::string cfgFileName = "CFG.dot";
+                cfgHandler.GenerateDOT(cfgFileName);
 
                 BytecodeContainer bytecodeInstructions;
                 cfgHandler.GenerateBytecode(bytecodeInstructions);
-                bool writeSuccess = bytecodeInstructions.WriteToFile("bytecode.txt");
+                std::string bytecodeFileName = "bytecode.txt";
+                bool writeSuccess = bytecodeInstructions.WriteToFile(bytecodeFileName);
 
                 if (!writeSuccess)
                 {
@@ -113,7 +115,34 @@ int main(int argc, char* argv[])
                 }
 
                 BytecodeInterpreter interpreter;
-                interpreter.Interpret("bytecode.txt");
+                interpreter.Interpret(bytecodeFileName);
+
+                /*
+
+                    General thoughts on assignment 3:
+
+                    The CFG itself was the easier part of the project but only once the architecture was in place.
+                    Because a large part of my previous code was not object oriented, I first tried solutions that did
+                    not use usual polymorphic behavior. Polymorphism was instead done through function pointers in a map.
+                    After realizing that converting the CFG into bytecode also was a very polymorphic problem, I decided
+                    to make proper use of polymorphism instead. This made the code much cleaner and easier to understand
+                    and there was no real benefit of using function pointers in a map as this is what happens behind the scenes
+                    when using polymorphism either way.
+
+
+                    There had to be special care taken to handle method calls.
+                    The implementation for parameters in the CFG was quick but no thought
+                    was given to how the parameters should actually be fetched by the method once it is called.
+                    To fix this, the "arg" TAC was used, which converts into store instructions in the bytecode.
+
+                    There was also the problem of the IR code having the method caller itself be the first argument.
+                    Because the bytecode interpreter only allows integers, there was no way to store a string to save
+                    the caller class name. This was fixed by saving all indicies where the instruction for the first parameter
+                    instruction is called and then making sure to remove it and properly insert the class name into the invokevirtual instruction.
+
+
+
+                */
 
             }
             else
