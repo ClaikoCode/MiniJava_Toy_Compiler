@@ -21,5 +21,6 @@ Node* GetMethodParams(const Node* methodDeclNode);
 
 const std::string* GetIdentifierName(const Node* identifierNode);
 const std::string* GetIdentifierType(const Node* identifierNode);
+const std::string* GetVariableName(const Node* variableNode);
 
 bool IsNodeLiteral(const Node* node);

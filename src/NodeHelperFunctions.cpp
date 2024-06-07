@@ -82,8 +82,8 @@ uint32_t GetMethodNumParams(const Node* methodDeclNode)
 {
     if (methodDeclNode != nullptr && methodDeclNode->type == N_STR_METHOD_DECL)
     {
-        Node* paramsNode = GetNodeChildWithName(methodDeclNode, N_STR_VARIABLE_LIST);
-        return paramsNode->children.size();
+        Node* paramsNode = GetNodeChildWithName(methodDeclNode, N_STR_PARAMETER_LIST);
+        return paramsNode ? paramsNode->children.size() : 0;
     }
 
     return (uint32_t)(-1);
@@ -91,7 +91,7 @@ uint32_t GetMethodNumParams(const Node* methodDeclNode)
 
 Node* GetMethodParams(const Node* methodDeclNode)
 {
-    return GetNodeChildWithName(methodDeclNode, N_STR_VARIABLE_LIST);
+    return GetNodeChildWithName(methodDeclNode, N_STR_PARAMETER_LIST);
 }
 
 Node* GetClassIdentifierNode(const Node* classDeclNode)
@@ -125,6 +125,18 @@ const std::string* GetIdentifierName(const Node* identifierNode)
 const std::string* GetIdentifierType(const Node* identifierNode)
 {
     return GetIdentifierName(identifierNode);
+}
+
+const std::string* GetVariableName(const Node* variableNode)
+{
+    if(variableNode != nullptr && variableNode->type == N_STR_VARIABLE)
+    {
+        Node* identifierNode = GetFirstChild(variableNode);
+        return GetIdentifierName(identifierNode);
+    }
+
+    return nullptr;
+
 }
 
 bool IsNodeLiteral(const Node* node)

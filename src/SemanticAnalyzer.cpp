@@ -75,16 +75,20 @@ bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, S
     // Push the symbol table onto the stack
     scopeAnalyzer.push(*symbolTableRoot);
 
+    // Assume that the structure is valid until proven otherwise.
+    bool validStructure = true;
+
     // Loop through all class declarations and analyze them
     if (astRoot->type == N_STR_PROGRAM)
     {
         for (auto child : symbolTableRoot->children)
         {
-            AnalyzeStructure(child->astNode, child, scopeAnalyzer);
+            bool result = AnalyzeStructure(child->astNode, child, scopeAnalyzer);
+            validStructure = validStructure && result;
         }
     }
     // Loop through all method declarations and analyze them
-    else if (astRoot->type == N_STR_CLASS_DECL)
+    else if (astRoot->type == N_STR_CLASS_DECL || astRoot->type == N_STR_MAIN_CLASS)
     {
         Node* variableDeclarations = GetNodeChildWithName(astRoot, N_STR_VARIABLE_DECLS);
         if (variableDeclarations != nullptr)
@@ -92,58 +96,64 @@ bool AnalyzeStructure(const Node* astRoot, const SymbolTable* symbolTableRoot, S
             // Analyze the variable declarations
             for (auto variableDeclaration : variableDeclarations->children)
             {
-                AnalyzeStatement(variableDeclaration, scopeAnalyzer);
+                bool result = AnalyzeStatement(variableDeclaration, scopeAnalyzer);
+                validStructure = validStructure && result;
             }
         }
 
         for (auto methodSymbolTable : symbolTableRoot->children)
         {
-            AnalyzeStructure(methodSymbolTable->astNode, methodSymbolTable, scopeAnalyzer);
-        }
-    }
-    else if (astRoot->type == N_STR_MAIN_CLASS)
-    {
-        // Main class is just a set of statements, so analyze them.
-        for (auto statementNode : astRoot->children)
-        {
-            AnalyzeStatement(statementNode, scopeAnalyzer);
+            bool result = AnalyzeStructure(methodSymbolTable->astNode, methodSymbolTable, scopeAnalyzer);
+            validStructure = validStructure && result;
         }
     }
     else if (astRoot->type == N_STR_METHOD_DECL)
     {
         const Identifier* methodIdentifier = scopeAnalyzer.GetCurrentMethod();
-        const Node* returnNode = GetReturnNode(astRoot);
+
 
         // If the method identifier is null, then the method is faulty.
-        if (methodIdentifier != nullptr && returnNode != nullptr)
+        // If the return node is null and the method is not void, then the method is faulty.
+        if (methodIdentifier != nullptr)
         {
             // Analyze the method body
             Node* methodBodyNode = GetNodeChildWithName(astRoot, N_STR_METHOD_BODY);
-            AnalyzeStatement(methodBodyNode, scopeAnalyzer);
+            bool result = AnalyzeStatement(methodBodyNode, scopeAnalyzer);
+            validStructure = validStructure && result;
 
-            // Analyze the return statement
-            const IdentifierDatatype& expectedReturnType = methodIdentifier->symbolinfo.type;
-            const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, scopeAnalyzer);
-
-            if (returnInfo != nullptr)
+            // Analyze the return statement if the method is not main (main does not have a return statement).
+            if (methodIdentifier->symbol.name != "main")
             {
-                if (returnInfo->type != expectedReturnType)
+                const IdentifierDatatype& expectedReturnType = methodIdentifier->symbolinfo.type;
+                const Node* returnNode = GetReturnNode(astRoot);
+                const SymbolInfo* returnInfo = AnalyzeExpression(returnNode, scopeAnalyzer);
+
+                if (returnInfo != nullptr)
                 {
-                    CompilerErr(
-                        returnNode,
-                        "Method '%s' has incorrect return type (expected '%s', got '%s').\n",
-                        methodIdentifier->symbol.GetName(),
-                        expectedReturnType.c_str(),
-                        returnInfo->type.c_str()
-                    );
+                    if (returnInfo->type != expectedReturnType)
+                    {
+                        CompilerErr(
+                            returnNode,
+                            "Method '%s' has incorrect return type (expected '%s', got '%s').\n",
+                            methodIdentifier->symbol.GetName(),
+                            expectedReturnType.c_str(),
+                            returnInfo->type.c_str()
+                        );
+
+                        validStructure = false;
+                    }
                 }
             }
+        }
+        else
+        {
+            validStructure = false;
         }
     }
 
     // Pop the symbol table off the stack
     scopeAnalyzer.pop();
-    return true;
+    return validStructure;
 }
 
 // Returns whether the statement is valid or not.
@@ -327,7 +337,7 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, ScopeAnalyzer& scopeAna
         const std::string* methodName = GetIdentifierName(methodCallNode);
         Assert(methodName != nullptr, "Method name is null.\n");
 
-        if (scopeAnalyzer.ClassExists(className))
+        if (scopeAnalyzer.ClassExists(callerInfo->type))
         {
             const std::string& className = callerInfo->type;
             const Identifier* methodIdentifier = scopeAnalyzer.GetClassMethod(className, *methodName);
@@ -339,7 +349,7 @@ const SymbolInfo* AnalyzeExpression(const Node* astRoot, ScopeAnalyzer& scopeAna
                 std::vector<IdentifierDatatype> argumentTypes;
                 if (methodArguments != nullptr)
                 {
-                    for (Node* argument : methodArguments->children)
+                    for (auto argument : methodArguments->children)
                     {
                         const SymbolInfo* argumentInfo = AnalyzeExpression(argument, scopeAnalyzer);
                         if (argumentInfo != nullptr)

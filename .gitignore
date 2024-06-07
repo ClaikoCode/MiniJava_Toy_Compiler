@@ -11,6 +11,9 @@ bin/*
 
 tree.dot
 tree.pdf
+CFG.dot
+CFG.pdf
+bytecode.txt
 
 # Any folder that contains should be tracked. 
 # Which files inside it to track should be clear in the above statements.

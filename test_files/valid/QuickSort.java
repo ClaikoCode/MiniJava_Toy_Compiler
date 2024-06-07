@@ -89,7 +89,7 @@ class QS{
     // Initialize array of integers
     public int Init(int sz){
 		size = sz ;
-		number = new int[sz] ;
+		number = new int[size] ;
 		
 		number[0] = 20 ;
 		number[1] = 7  ; 

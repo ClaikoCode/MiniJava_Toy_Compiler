@@ -43,7 +43,7 @@
 
 %type <std::string> type
 %type <Node*> goal main_class class_decl_batch class_declaration method_decl_batch method_declaration return_statement method_body var_decl_batch var_declaration variable
-%type <Node*> statement statement_batch_0P statement_batch_1P var_list filled_var_list arg_list identifier filled_arg_list
+%type <Node*> statement statement_batch_0P statement_batch_1P param_list filled_param_list arg_list identifier filled_arg_list
 %type <Node*> expression primary_expr
 
 %right "then" ELSE
@@ -68,7 +68,20 @@ main_class  : PUBLIC CLASS identifier
                 LCB 
                     statement_batch_1P
                 RCB 
-              RCB { ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); ACT_COPY_LINENO($$, $3); ACT_COPY_LINENO($$, $3); ACT_ADD_CHILD($$, $3); ACT_ADD_CHILD($$, $13); ACT_ADD_CHILD($$, $16); };
+              RCB { 
+                ACT_REGISTER_NODE($$, N_STR_MAIN_CLASS, ""); 
+                ACT_COPY_LINENO($$, $3);
+                ACT_ADD_CHILD($$, $3);
+                Node* mainMethod = ACT_NEW_NODE(N_STR_METHOD_DECL, $7);
+                ACT_ADD_CHILD(mainMethod, ACT_NEW_NODE(N_STR_IDENTIFIER, $8));
+                ACT_ADD_CHILD(mainMethod, ACT_NEW_NODE(N_STR_RETURN, ""));
+
+                Node* mainMethodBody = ACT_NEW_NODE(N_STR_METHOD_BODY, "");
+                ACT_ADD_CHILD(mainMethodBody, $16);
+                ACT_ADD_CHILD(mainMethod, mainMethodBody);
+
+                ACT_ADD_CHILD($$, mainMethod);
+            };
 
 
 class_decl_batch    : /* empty */ { $$ = nullptr; }
@@ -81,7 +94,7 @@ method_decl_batch   : /* empty */ { $$ = nullptr; }
                     | method_decl_batch method_declaration { ACT_REGISTER_IF_NULL($$, $1, N_STR_METHOD_DECLS, ""); $$ = $1; ACT_ADD_CHILD($$, $2); }
                     ;
 
-method_declaration  : PUBLIC type identifier LP var_list RP 
+method_declaration  : PUBLIC type identifier LP param_list RP 
                         LCB method_body return_statement RCB { 
                                 ACT_REGISTER_NODE($$, N_STR_METHOD_DECL, $2);
                                 ACT_COPY_LINENO($$, $3); // copy line number from identifier into method declaration
@@ -167,13 +180,13 @@ primary_expr    : INTEGER  { ACT_REGISTER_NODE($$, T_STR_INT, $1); }
                 | identifier { $$ = $1; }
                 ;
 
-var_list    : /* empty */ { $$ = nullptr; }
-            | filled_var_list { $$ = $1; }
-            | variable { ACT_REGISTER_NODE($$, N_STR_VARIABLE_LIST, ""); ACT_ADD_CHILD($$, $1); }
+param_list    : /* empty */ { $$ = nullptr; }
+            | filled_param_list { $$ = $1; }
+            | variable { ACT_REGISTER_NODE($$, N_STR_PARAMETER_LIST, ""); ACT_ADD_CHILD($$, $1); }
             ;
 
-filled_var_list : variable COMMA variable { ACT_REGISTER_NODE($$, N_STR_VARIABLE_LIST, ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
-                | filled_var_list COMMA variable { $$ = $1; ACT_ADD_CHILD($$, $3); }
+filled_param_list : variable COMMA variable { ACT_REGISTER_NODE($$, N_STR_PARAMETER_LIST, ""); ACT_ADD_CHILD($$, $1); ACT_ADD_CHILD($$, $3); }
+                | filled_param_list COMMA variable { $$ = $1; ACT_ADD_CHILD($$, $3); }
                 ;
 
 arg_list    : /* empty */ { $$ = nullptr; }

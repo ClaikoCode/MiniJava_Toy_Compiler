@@ -1,14 +1,14 @@
 SRCDIR = src
 ODIR = bin
 LIBS = -ll
-CFLAGS = -g -w -std=c++14
+CFLAGS = -g -w -std=c++17
 CC = g++
 
-FLEX_FILE = minijava_lexer.ll
-PARSE_FILE = minijava_parser.yy
+FLEX_FILE = $(SRCDIR)/minijava_lexer.ll
+PARSE_FILE = $(SRCDIR)/minijava_parser.yy
 
-FLEX_OUT = $(patsubst %.ll, $(SRCDIR)/%.yy.c, $(FLEX_FILE))
-PARSER_OUT = $(patsubst %.yy, $(SRCDIR)/%.tab.cc, $(PARSE_FILE))
+FLEX_OUT = $(patsubst %.ll, %.yy.c, $(FLEX_FILE))
+PARSER_OUT = $(patsubst %.yy, %.tab.cc, $(PARSE_FILE))
 PARSER_HEADER = $(patsubst %.cc, %.hh, $(PARSER_OUT))
 SRC = $(wildcard $(SRCDIR)/*.cpp)
 
@@ -17,16 +17,17 @@ PROGRAM_OUT = ./compiler
 TEST_FOLDER = ./test_files
 TEST_FILE = ./experiments/testText3.java
 TEST_FILE = $(TEST_FOLDER)/syntax_errors/InvalidMethodCall2.java
-TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
 TEST_FILE = $(TEST_FOLDER)/valid/SemanticMethodCallInBooleanExpression.java
 TEST_FILE = $(TEST_FOLDER)/semantic_errors/InvalidNestedMethodCalls.java
+TEST_FILE = $(TEST_FOLDER)/assignment3_valid/B.java
+TEST_FILE = $(TEST_FOLDER)/valid/Factorial.java
 
 all: $(PROGRAM_OUT)
+	cp $(TEST_FILE) $(ODIR)/inputfile.java
 
 # Compile the program
-$(PROGRAM_OUT): $(FLEX_OUT) $(PARSER_OUT) $(SRC) $(LIBS)
-	$(CC) $(CFLAGS) -o $@ $^
-	cp $(TEST_FILE) $(ODIR)/inputfile.java
+$(PROGRAM_OUT): $(FLEX_OUT) $(PARSER_OUT) $(SRC)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 # Compile the parser
 $(PARSER_OUT): $(PARSE_FILE)
@@ -36,14 +37,19 @@ $(PARSER_OUT): $(PARSE_FILE)
 $(FLEX_OUT): $(PARSER_OUT) $(FLEX_FILE) 
 	flex -o $@ $(FLEX_FILE)
 
-run: compiler
-	$(PROGRAM_OUT) $(TEST_FILE)
+run: all
+	$(PROGRAM_OUT) $(ODIR)/inputfile.java
+	$(MAKE) tree
+	$(MAKE) CFG
 
 clean:
-	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf
+	rm -f $(FLEX_OUT) $(PARSER_OUT) $(PARSER_HEADER) $(ODIR)/*.o $(PROGRAM_OUT) tree.dot tree.pdf CFG.dot CFG.pdf
 
 tree: tree.dot
 	dot -Tpdf tree.dot -o tree.pdf
+
+CFG: CFG.dot
+	dot -Tpdf CFG.dot -o CFG.pdf
 
 lexical_test: all
 	python3 ./testScript.py -lexical
