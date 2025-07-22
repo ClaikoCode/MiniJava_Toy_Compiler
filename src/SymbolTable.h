@@ -2,6 +2,7 @@
 
 #include <string>
 #include <functional> // std::hash
+#include <cstdint>
 
 #include "Node.h"
 
